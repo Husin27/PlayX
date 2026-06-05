@@ -1,0 +1,10 @@
+# Instruksi Dasar untuk Proyek GLX
+- Gunakan TypeScript untuk semua file.
+- Terapkan Clean Architecture (Domain, Application, Infrastructure).
+- Selalu sertakan Unit Test dengan Vitest untuk setiap fitur baru.
+- Utamakan efisiensi biaya: gunakan model yang lebih ekonomis (seperti Nemotron 3 Super) untuk boilerplate dan dokumentasi. Gunakan DeepSeek V4 Pro hanya untuk logika kompleks atau arsitektur.
+- Struktur monorepo: Gunakan package di /packages untuk logika yang dibagikan.
+
+# Aturan Komunikasi & Eksekusi
+- JANGAN meminta konfirmasi bertele-tele. Langsung eksekusi tugas sesuai instruksi.
+- JANGAN melakukan instalasi package (`npm install`, `pnpm install`, dll) secara otomatis tanpa perintah eksplisit dari user.
