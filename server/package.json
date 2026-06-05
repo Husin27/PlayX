@@ -1,0 +1,13 @@
+{
+  "name": "@appx/server",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Running server in dev mode'",
+    "build": "echo 'Building server...'"
+  },
+  "dependencies": {
+    "@glx/types": "workspace:*",
+    "@glx/database": "workspace:*"
+  }
+}

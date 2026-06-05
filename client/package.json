@@ -1,0 +1,12 @@
+{
+  "name": "@appx/client",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Running client dev mode'",
+    "build": "echo 'Building client...'"
+  },
+  "dependencies": {
+    "@glx/types": "workspace:*"
+  }
+}

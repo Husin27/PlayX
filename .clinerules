@@ -1,4 +1,4 @@
-# Instruksi Dasar untuk Proyek GLX
+# Instruksi Dasar untuk Proyek APP
 - Gunakan TypeScript untuk semua file.
 - Terapkan Clean Architecture (Domain, Application, Infrastructure).
 - Selalu sertakan Unit Test dengan Vitest untuk setiap fitur baru.

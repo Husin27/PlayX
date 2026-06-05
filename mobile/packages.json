@@ -1,0 +1,8 @@
+{
+  "name": "@glx/mobile",
+  "version": "0.0.0",
+  "dependencies": {
+    "@glx/types": "workspace:*",
+    "@glx/utils": "workspace:*"
+  }
+}

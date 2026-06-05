@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "strict": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@appx/types": ["packages/types/src"],
+      "@appx/database": ["packages/database/src"]
+    }
+  },
+  "files": [],
+  "references": [
+    { "path": "packages/types" },
+    { "path": "packages/database" },
+    { "path": "server" },
+    { "path": "client" },
+    { "path": "mobile" }
+  ]
+}
