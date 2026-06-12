@@ -7,6 +7,6 @@
     "build": "echo 'Building client...'"
   },
   "dependencies": {
-    "@glx/types": "workspace:*"
+    "@appx/types": "workspace:*"
   }
 }

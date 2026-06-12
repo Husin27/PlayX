@@ -7,7 +7,7 @@
     "build": "echo 'Building server...'"
   },
   "dependencies": {
-    "@glx/types": "workspace:*",
-    "@glx/database": "workspace:*"
+    "@appx/types": "workspace:*",
+    "@appx/database": "workspace:*"
   }
 }
