@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "6.0", // 🧯 SUNTIKKAN INI UNTUK MEMBUNGKAM TOTAL PROTES TS 7.0!
     "composite": true,
     "declaration": true,
     "declarationMap": true,
@@ -10,13 +11,13 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@appx/types": ["packages/types/src"],
+      "@appx/type": ["packages/type/src"],
       "@appx/database": ["packages/database/src"]
     }
   },
   "files": [],
   "references": [
-    { "path": "packages/types" },
+    { "path": "packages/type" },
     { "path": "packages/database" },
     { "path": "server" },
     { "path": "client" },

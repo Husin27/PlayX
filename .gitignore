@@ -34,3 +34,6 @@ Thumbs.db
 *.njsproj
 *.sln
 *.swp
+*.tsbuildinfo
+.pnpm-store/
+.local-chromium/
