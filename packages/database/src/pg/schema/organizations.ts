@@ -7,7 +7,7 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 
-export const userCompanies = pgTable("organizations", {
+export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 255 }).notNull(),
   addressLine1: varchar("addressLine1", { length: 255 }), // Nama jalan/gedung
