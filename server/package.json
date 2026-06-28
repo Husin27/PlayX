@@ -1,5 +1,5 @@
 {
-  "name": "@appx/server",
+  "name": "@playx/server",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -8,8 +8,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@appx/database": "workspace:*",
-    "@appx/type": "workspace:*",
+    "@playx/database": "workspace:*",
+    "@playx/type": "workspace:*",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "@fastify/env": "^7.0.0",

@@ -1,5 +1,5 @@
 {
-  "name": "@appx/type",
+  "name": "@playx/type",
   "version": "1.0.0",
   "main": "./src/index.ts",
   "types": "./src/index.ts"
