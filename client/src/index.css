@@ -1,52 +1,55 @@
-/* @tailwind base */
+/* PANDUAN DESIGN SYSTEM UNTUK AI:
+  1. Gunakan 'primary' (shadcn) HANYA untuk komponen UI bawaan shadcn/ui.
+  2. Gunakan 'primary-brand' (premium-surface) untuk identitas brand, logo, dan tombol utama.
+  3. Jangan pernah mengubah nilai 'primary' shadcn untuk keperluan branding.
+*/
+
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    /* 1. Font & Basic Shadcn Mapping */
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
+    
+    /* 2. Color Mappings (Shadcn) */
     --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    /* 3. Branding & Premium Surface Mappings */
+    --color-brand-primary: var(--primary-brand);
+    --color-brand-hover: var(--primary-brand-hover);
+    --color-surface: var(--surface-elevated);
+    --color-header: var(--header-bg);
+    
+    /* 4. Radius & Shadows */
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+    --radius-surface: var(--surface-radius);
+    --radius-surface-lg: var(--surface-radius-lg);
+    --shadow-sm: var(--shadow-sm);
+    --shadow-md: var(--shadow-md);
+    --shadow-lg: var(--shadow-lg);
 }
 
 :root {
@@ -82,6 +85,31 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+
+    /* Token Premium Surface Anda */
+    --surface-radius: 16px;
+    --surface-radius-lg: 20px;
+    --shadow-sm: 0 2px 6px rgba(0,0,0,.04);
+    --shadow-md: 0 8px 24px rgba(0,0,0,.08);
+    --shadow-lg: 0 16px 40px rgba(0,0,0,.12);
+    --backdrop-blur: 12px;
+    --surface-noise-opacity: 0.025;
+    --transition-fast: 120ms ease;
+    --transition-normal: 180ms ease;
+    
+    /* Default Fallback Theme */
+    --primary-brand: #2F6FED;
+    --primary-brand-hover: #235EE0;
+    --surface-base: #F5F8FD;
+    --surface-elevated: #FFFFFF;
+    --organic-mesh: rgba(89, 140, 255, 0.12);
+    --ambient-glow: rgba(59, 130, 246, 0.18);
+    --border-color: #D9E4F5;
+    --text-primary: #172B4D;
+    --text-secondary: #5E6C84;
+    --sidebar-bg: #F5F8FD;
+    --header-bg: #F5F8FD;
+    --card-bg: rgba(255,255,255,.88);
 }
 
 .dark {
@@ -118,14 +146,20 @@
     --sidebar-ring: oklch(0.556 0 0);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-    }
-  body {
-    @apply bg-background text-foreground;
-    }
-  html {
-    @apply font-sans;
-    }
+/* Pemetaan Base Global Sesuai Aturan Resmi Tailwind v4 */
+@utility * {
+    border-color: var(--border);
+}
+
+* {
+    outline-color: color-mix(in oklch, var(--ring) 50%, transparent);
+}
+
+body {
+    background-color: var(--background);
+    color: var(--foreground);
+}
+
+html {
+    font-family: var(--font-sans);
 }
