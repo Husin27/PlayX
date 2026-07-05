@@ -1,0 +1,148 @@
+
+tabel inventory
+
+inventoryid  uuid
+partnumber   varchar  100
+qty          int
+qtyavailable    int
+price     float
+cost      float
+vendorid
+additionaldetail jsonb
+
+Tabel company
+
+companyid     uuid
+companyno     int
+companyname   varchar 100   
+address       jsonb
+>>  masukkan ke jsonb
+termsid   uuid   
+termsname   varchar 100
+termsday    int
+waitpayment   Boolean
+>>  masukkan ke jsonb
+additionaldetail  jsonb
+
+
+tabel  invoice   
+invoiceid   uuid
+invoiceno
+invoicedate   date
+companyno
+company
+termsid   uuid   
+termsname   varchar 100
+termsday    int
+waitpayment   Boolean
+sendfrom  (mainoffice, branch1, branch2) <<  radio button 
+valcheck1    varchar(1)
+valcheck2    Boolean
+valcheck3    varchar(50)
+valcheckgroup jsonb
+listgroup     jsonb
+radio1   varchar(1)
+radio2   varchar(50)
+currencyid uuid
+currencysymbol  varchar(1)
+currencytext    varchar(50)
+currencyshort   varchar(3)   
+companyaddress jsonb
+exchangerate   float
+total    float
+additionaldetail jsonb  (terms etc)  
+
+
+
+tabel invoiceitems
+invoiceid   uuid
+inventoryid   uuid
+partnumberid
+partnumber   varchar 100
+origin
+qty           int
+price         float
+linetotal     float
+
+export license required       (checkbox) 
+no export license required    (checkbox) 
+isdanger                      (checkbox)
+additionaldetail jsonb  (rohs origin dll)
+
+
+
+
+tabel terms
+termsid   uuid
+termsname   varchar 100
+termsday    int
+waitpayment   Boolean
+
+tabel country
+countryid   uuid
+country      varchar 255
+
+
+
+tabel currency 
+currencyid   uuid
+currency    varchar (5)
+currencyshort  varchar(3)
+currencysymbol  varchar(1)
+
+
+
+>>  tambah table eccn
+
+
+scenario combobox sampai 4 column ... bisa pilih yg mana yg di display di textbox nya ... link by id  dan link by raw text spt origin ?
+bisa simpan ke standard column dan jsonb  ... 
+
+radio button bisa simpan ke column dan jsonb
+
+checkbox bisa simpan ke column dan jsonb ... (include multiple check (grup))  <<  bisa Boolean bisa full value bisa initial
+
+switch .. scenario spt checkbox tapi ga grup ... 
+
+Listbox ... bisa select multiple .. bisa simpan ke kolom dan jsonb 
+
+
+
+
+ide bikin playground nya ... harus bisa nampilkan semua komponen dan kapasitas nya ... 
+dan ada tools atau box untuk lihat kode di balik setiap komponen yg kita test (gaya devexpress mega samples kalau ga salah)
+bisa dibikin per page itu sample dari per komponen 
+
+tolong di pikirkan tabel nya juga dengan kapasitas sampai bisa menampilkan drawer dan pdfviewer dan imageviewer dgn kapasitas dropbox/fileuploader juga 
+
+grid bisa check sampai 50 ribu baris ... beserta sorting filtering column moving row moving editing inline premium indikator kalau data berubah ... 
+
+combo harus bisa menampilkan dan handle banyak skenarion :
+ --  1 kolom dan save value nya saja spt dr tabel country
+
+--   1 kolom dan save id nya saja ... seperti dr tabel company .. yg di simpan ke invoice db cmn companyid nya saja ... tapi yg dilihat di text area nya combobox company name nya .. 
+
+     ketika invoice nya scroll harus bisa autorefresh company name nya 
+--   2 kolom yg di simpan ke database 1 kolom atau dua2 nya (bikin supaya bisa opsi) ... misal dari tabel inventory .. save ke invoice items .. 
+     inventoryid nya dan partnumber nya ... (ketika pick harus bisa bawa data price juga meskipun ga kliatan di dropdown)   
+
+--  3 kolom  (spt currency)  tampilakn currencyname symbol currencyshortname (US Dollar   $   USD)  
+     yg tampilkan di textbox nya currency name ketika scroll bisa refresh currencyname otomatis dan symbol juga disimpan di tabel invoice dan reflect ke all currency text edit symbol nya .. 
+     begitu pula ketika ganti currency harus auto refresh invoice symbol nya dan all currency text nya di invoice tsb langsung reflect change ... di scroll ke invoice lain harus smooth change 
+
+--  combobok dan listbox harus ada sample yg support checkbox dan incremental search ... di listbox dgn search text di atas sendiri .. 
+di combo box dengan search text di row paling atas dari dropdown nya dan bisa juga dengan typing di textbox nya langsung 
+
+
+--  checkbox bisa test individual dan bisa test group (multiple choice dgn min choice dan max choice)
+
+--  semua komponen DB aware harus support 2 cara simpan .. ke kolom biasa dan ke jsonb 
+
+
+
+
+======================================================================================================================================
+
+1. Tabel Master Mata Uang (master_currency)currencyid UUID (Primary Key)currency VARCHAR(5) (Contoh: Rupiah, Dollar)currencyshort VARCHAR(3) (Contoh: IDR, USD)currencysymbol VARCHAR(1) (Contoh: Rp, $)additionaldetail JSONB2. Tabel Master Rekan Bisnis (master_vendor)vendorid UUID (Primary Key)vendor_code VARCHAR(50) (Contoh: VND-001)vendor_name VARCHAR(255)tax_id VARCHAR(50) (Nomor NPWP/Pajak)is_active BOOLEANadditionaldetail JSONB3. Tabel Master Cabang Perusahaan (company_branch)branchid SERIAL (Primary Key)branch_code VARCHAR(20) (Contoh: HO-JKT)branch_name VARCHAR(150)regional_zone VARCHAR(100) (Contoh: WIB, WITA)additionaldetail JSONB4. Tabel Master Barang Gudang (master_inventory)inventoryid UUID (Primary Key)partnumber VARCHAR(100) (Contoh: PART-AX-99)qty INT (Stok fisik)qtyavailable INT (Stok siap pakai)price DECIMAL(18,2) (Harga jual standar)cost DECIMAL(18,2) (Harga pokok pembelian terakhir)vendorid UUID (Foreign Key -> master_vendor.vendorid)additionaldetail JSONB5. Tabel Induk Faktur Pembelian (invoice_header_mock)id UUID / BIGINT (Primary Key)invoice_no VARCHAR(50) (Contoh: INV-2026-07-001)vendor_id UUID (Foreign Key -> master_vendor.vendorid)branch_id INT (Foreign Key -> company_branch.branchid)invoice_date TIMESTAMPTZstatus VARCHAR(20) (Diikat ke StatusIndicator: draft, posted, void)total_amount DECIMAL(18,2) (Kalkulasi total sum dari detail item)additionaldetail JSONB🛡️ Multi-Currency Snapshot (Wajib):currencyid UUID (Foreign Key -> master_currency.currencyid)currency VARCHAR(5)currencyshort VARCHAR(3)currencysymbol VARCHAR(1) (Disuapkan langsung ke bodi komponen numeric-edit.tsx)6. Tabel Detail Item Faktur (invoice_items_mock) — Sengaja Diisi 50.000 Barisid BIGINT (Primary Key)invoice_id UUID / BIGINT (Foreign Key -> invoice_header_mock.id ON DELETE CASCADE)inventory_id UUID (Foreign Key -> master_inventory.inventoryid)partnumber VARCHAR(100)qty INTunit_price DECIMAL(18,2)line_total DECIMAL(18,2) (qty * unit_price)additionaldetail JSONB7. Tabel Riwayat Audit Dokumen Systems (document_audit_log)id BIGINT (Primary Key)invoice_id UUID / BIGINT (Foreign Key -> invoice_header_mock.id)triggered_at TIMESTAMPTZ (Waktu eksekusi audit)operator_name VARCHAR(100)action_type VARCHAR(50) (Contoh: CREATE, POST, VOID)payload_snapshot JSONB (Rekam jejak seluruh data masa lalu)additionaldetail JSONB
+
+

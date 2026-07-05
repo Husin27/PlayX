@@ -1,0 +1,27 @@
+/*
+  Client Theme Collection (Tenant-Specific Themes).
+  Used by the application via the data-theme attribute.
+  AI: Use these variables for styling premium dashboard components.
+*/
+
+[data-theme="corporate-blue"] {
+  --primary: #2f6fed;
+  --primary-hover: #235ee0;
+
+  --surface-base: #f5f8fd;
+  --surface-elevated: #ffffff;
+
+  --organic-mesh: rgba(89, 140, 255, 0.12);
+
+  --ambient-glow: rgba(59, 130, 246, 0.18);
+
+  --border-color: #d9e4f5;
+
+  --text-primary: #172b4d;
+  --text-secondary: #5e6c84;
+
+  --sidebar-bg: #f5f8fd;
+  --header-bg: #f5f8fd;
+
+  --card-bg: rgba(255, 255, 255, 0.88);
+}

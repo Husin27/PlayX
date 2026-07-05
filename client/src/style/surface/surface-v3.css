@@ -1,0 +1,248 @@
+
+/******************************************************************************
+ *
+ * GL ERP Enterprise
+ * Premium Workspace Surface v3.0
+ *
+ * Philosophy
+ * ----------
+ * • Quiet UI
+ * • Enterprise First
+ * • Minimal Decoration
+ * • Strong Hierarchy
+ * • Theme Driven
+ *
+ ******************************************************************************/
+
+.premium-surface {
+
+    position: relative;
+
+    isolation: isolate;
+
+    overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
+
+    background:
+
+        radial-gradient(
+            ellipse at top right,
+            var(--ambient-glow),
+            transparent 38%
+        ),
+
+        radial-gradient(
+            ellipse at bottom left,
+            var(--organic-mesh),
+            transparent 55%
+        ),
+
+        linear-gradient(
+            180deg,
+            color-mix(in srgb, var(--surface-base) 98%, white 2%),
+            var(--surface-base)
+        );
+
+    border:
+
+        1px solid
+
+        color-mix(in srgb,
+            var(--surface-border) 85%,
+            white 15%);
+
+    border-radius:
+
+        var(--surface-radius);
+
+    background-clip: padding-box;
+
+    box-shadow:
+
+        var(--surface-shadow),
+
+        inset 0 1px 0 rgba(255,255,255,.55);
+
+    backdrop-filter:
+
+        blur(var(--surface-blur));
+
+    -webkit-backdrop-filter:
+
+        blur(var(--surface-blur));
+
+    transition:
+
+        background .25s ease,
+
+        border-color .25s ease,
+
+        box-shadow .25s ease,
+
+        transform .18s ease;
+}
+
+/******************************************************************************
+ * Ambient Lighting
+ ******************************************************************************/
+
+.premium-surface::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    pointer-events:none;
+
+    background:
+
+        radial-gradient(
+
+            ellipse at top,
+
+            rgba(255,255,255,.45),
+
+            transparent 58%
+
+        );
+
+    opacity:.65;
+
+    z-index:0;
+}
+
+/******************************************************************************
+ * Organic Mesh
+ ******************************************************************************/
+
+.premium-surface::after{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    pointer-events:none;
+
+    opacity:.30;
+
+    background:
+
+        radial-gradient(
+            circle at 15% 25%,
+            rgba(255,255,255,.08),
+            transparent 22%
+        ),
+
+        radial-gradient(
+            circle at 80% 75%,
+            rgba(255,255,255,.05),
+            transparent 26%
+        );
+
+    mix-blend-mode:soft-light;
+
+    z-index:0;
+}
+
+/******************************************************************************
+ * Content Layer
+ ******************************************************************************/
+
+.premium-surface > *{
+
+    position:relative;
+
+    z-index:1;
+}
+
+/******************************************************************************
+ * Workspace Hover
+ ******************************************************************************/
+
+.premium-surface:hover{
+
+    box-shadow:
+
+        0 22px 70px rgba(20,40,120,.10),
+
+        0 10px 24px rgba(20,40,120,.05),
+
+        inset 0 1px 0 rgba(255,255,255,.65);
+
+}
+
+/******************************************************************************
+ * Workspace Active
+ ******************************************************************************/
+
+.premium-surface:focus-within{
+
+    border-color:
+
+        color-mix(
+
+            in srgb,
+
+            var(--surface-border),
+
+            var(--primary) 20%
+
+        );
+
+}
+
+/******************************************************************************
+ * Premium Section
+ ******************************************************************************/
+
+.premium-section{
+
+    background:
+
+        linear-gradient(
+
+            180deg,
+
+            rgba(255,255,255,.35),
+
+            rgba(255,255,255,.18)
+
+        );
+
+    border:
+
+        1px solid rgba(255,255,255,.28);
+
+    border-radius:
+
+        calc(var(--surface-radius) - 10px);
+
+    padding:24px;
+
+}
+
+/******************************************************************************
+ * Section Divider
+ ******************************************************************************/
+
+.premium-section + .premium-section{
+
+    margin-top:20px;
+
+}
+
+/******************************************************************************
+ * Optional Hero Area
+ ******************************************************************************/
+
+.premium-surface.hero{
+
+    padding-top:36px;
+
+}

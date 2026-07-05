@@ -1,0 +1,27 @@
+/*
+  Client Theme Collection (Tenant-Specific Themes).
+  Used by the application via the data-theme attribute.
+  AI: Use these variables for styling premium dashboard components.
+*/
+
+[data-theme="indigo-executive"] {
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+
+  --surface-base: #f5f6fd;
+  --surface-elevated: #ffffff;
+
+  --organic-mesh: rgba(99, 102, 241, 0.12);
+
+  --ambient-glow: rgba(79, 70, 229, 0.18);
+
+  --border-color: #e1e4f7;
+
+  --text-primary: #242b54;
+  --text-secondary: #666d93;
+
+  --sidebar-bg: #f5f6fd;
+  --header-bg: #f5f6fd;
+
+  --card-bg: rgba(255, 255, 255, 0.88);
+}

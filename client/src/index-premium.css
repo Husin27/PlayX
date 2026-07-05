@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   💎 PREMIUM APP UTILITY BASE & METRICS CONSTANTS
+   ========================================================================== */
+:root {
+  --surface-radius: 16px;
+  --surface-radius-lg: 20px;
+
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
+
+  --backdrop-blur: 12px;
+  --surface-noise-opacity: 0.025;
+
+  --transition-fast: 120ms ease;
+  --transition-normal: 180ms ease;
+
+  /* 🔋 Default Fallback Fallback Theme */
+  --primary-brand: #2f6fed; /*  aslinya primary */
+  --primary-brand-hover: #235ee0; /*  aslinya primary */
+  --surface-base: #f5f8fd;
+  --surface-elevated: #ffffff;
+  --organic-mesh: rgba(89, 140, 255, 0.12);
+  --ambient-glow: rgba(59, 130, 246, 0.18);
+  --border-color: #d9e4f5;
+  --text-primary: #172b4d;
+  --text-secondary: #5e6c84;
+  --sidebar-bg: #f5f8fd;
+  --header-bg: #f5f8fd;
+  --card-bg: rgba(255, 255, 255, 0.88);
+}
+
+/* ==========================================================================
+   ⚡ JEMBATAN GAIB TAILWIND CSS V4 THEME EXTENSION LOOKUP BRIDGE
+   ========================================================================== */
+@theme {
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-background: var(--surface-base);
+  --color-surface: var(--surface-elevated);
+  --color-border: var(--border-color);
+  --color-text-main: var(--text-primary);
+  --color-text-sub: var(--text-secondary);
+  --color-sidebar: var(--sidebar-bg);
+  --color-header: var(--header-bg);
+  --color-card: var(--card-bg);
+
+  --radius-surface: var(--surface-radius);
+  --radius-surface-lg: var(--surface-radius-lg);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+}

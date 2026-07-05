@@ -1,0 +1,27 @@
+/*
+  Client Theme Collection (Tenant-Specific Themes).
+  Used by the application via the data-theme attribute.
+  AI: Use these variables for styling premium dashboard components.
+*/
+
+[data-theme="burgundy-executive"] {
+  --primary: #8c2f39;
+  --primary-hover: #77242d;
+
+  --surface-base: #fcf6f7;
+  --surface-elevated: #ffffff;
+
+  --organic-mesh: rgba(140, 47, 57, 0.1);
+
+  --ambient-glow: rgba(172, 63, 79, 0.14);
+
+  --border-color: #ebd8db;
+
+  --text-primary: #4c1f25;
+  --text-secondary: #7d5a61;
+
+  --sidebar-bg: #fcf6f7;
+  --header-bg: #fcf6f7;
+
+  --card-bg: rgba(255, 255, 255, 0.88);
+}
