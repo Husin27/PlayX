@@ -31,6 +31,7 @@ import { DateEdit } from "../data-entry/date-edit";
 import { PremiumCheckbox } from "../selector/checkbox";
 import { ComboBox } from "../selector/combo-box";
 import { HintBox } from "../feedback/hint-box";
+import { StandalonePagination } from "../feedback/standalone-pagination";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -76,6 +77,7 @@ export interface GridProps extends Omit<
   rowIdentifierKey?: string;
   rowHeightPx?: number;
   activeRowKey?: string;
+  disabled?: boolean;
   onRowClick?: (row: Record<string, unknown>, index: number) => void;
   onDataChange?: (
     updatedData: Record<string, unknown>[],
@@ -701,13 +703,24 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
                               ) : (
                                 <>
                                   {canSort && (
-                                    <button
+                                    <div
                                       onClick={() => handleSort(column)}
                                       className={cn(
-                                        "flex items-center gap-1 p-1 rounded hover:bg-brand-primary/10 transition-colors",
+                                        "flex items-center gap-1 p-1 rounded transition-all duration-100 active:scale-95 hover:bg-[color-mix(in_oklch,var(--color-brand-primary)_10%,transparent)] cursor-pointer",
                                         isSorted && "text-brand-primary",
                                       )}
                                       aria-label={`Sort by ${column.id}`}
+                                      role="button"
+                                      tabIndex={0}
+                                      onKeyDown={(e) => {
+                                        if (
+                                          e.key === "Enter" ||
+                                          e.key === " "
+                                        ) {
+                                          e.preventDefault();
+                                          handleSort(column);
+                                        }
+                                      }}
                                     >
                                       {typeof header.column.columnDef.header ===
                                       "function"
@@ -730,7 +743,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
                                       {!isSorted && (
                                         <ArrowUpDown className="h-3.5 w-3.5 text-text-muted" />
                                       )}
-                                    </button>
+                                    </div>
                                   )}
                                   {!canSort &&
                                     (typeof header.column.columnDef.header ===
@@ -849,6 +862,18 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
               )}
             </tbody>
           </table>
+        </div>
+
+        <div className="border-t border-[color-mix(in_oklch,var(--color-border)_40%,transparent)] p-3 flex justify-between items-center bg-card/40 shrink-0">
+          <div className="text-xs text-text-muted">
+            Showing {table.getRowModel().rows.length} records
+          </div>
+          <StandalonePagination
+            currentPage={table.getState().pagination.pageIndex + 1}
+            totalPages={table.getPageCount()}
+            onPageChange={(targetPage) => table.setPageIndex(targetPage - 1)}
+            disabled={props.disabled}
+          />
         </div>
 
         {error && (
