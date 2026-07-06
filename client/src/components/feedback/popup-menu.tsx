@@ -3,6 +3,7 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { LucideIcon } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { Checkbox } from "@/components/selector/checkbox";
 
 // 🚀 LOCAL VANILLA CN UTILITY CORES
 export function cn(...inputs: ClassValue[]) {
@@ -19,6 +20,10 @@ export interface PopupMenuItemConfig {
   destructive?: boolean;
   onClick?: () => void;
   children?: PopupMenuItemConfig[]; // Up to 3 layers cascading
+  // Toggleable Checkbox capability
+  isCheckbox?: boolean;
+  checked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
 }
 
 export interface PopupMenuProps {
@@ -66,6 +71,7 @@ function MenuItem({ item, level, onClose }: MenuItemProps) {
   } | null>(null);
   const isOpen = isSubMenuOpen(item.id);
   const hasChildren = item.children && item.children.length > 0;
+  const isCheckboxItem = item.isCheckbox === true;
 
   // Register/unregister submenu element
   useEffect(() => {
@@ -148,6 +154,95 @@ function MenuItem({ item, level, onClose }: MenuItemProps) {
     );
   }
 
+  // Render CheckboxItem for toggleable checkbox items
+  if (isCheckboxItem) {
+    return (
+      <DropdownMenuPrimitive.CheckboxItem
+        ref={itemRef}
+        key={item.id}
+        disabled={item.disabled}
+        checked={item.checked ?? false}
+        onCheckedChange={item.onCheckedChange}
+        onSelect={(e) => e.preventDefault()} // ANTI-CLOSE GUARD: Prevent dropdown from closing on checkbox toggle
+        className={cn(
+          "relative flex cursor-default select-none items-center rounded-sm px-3 py-2 text-sm outline-none transition-all duration-100",
+          "focus:bg-brand-primary/10 focus:text-brand-primary active:scale-[0.98]",
+          "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+          item.destructive
+            ? "text-destructive focus:bg-destructive/10 focus:text-destructive"
+            : "text-text-main",
+          level > 0 && "pl-8",
+        )}
+        onKeyDown={handleKeyDown}
+        onMouseEnter={handleMouseEnter}
+      >
+        {item.icon && (
+          <span className="mr-3 h-4 w-4 flex-shrink-0" aria-hidden="true">
+            <item.icon className="h-4 w-4 stroke-[2px]" />
+          </span>
+        )}
+        <Checkbox
+          checked={item.checked ?? false}
+          readOnly
+          className="pointer-events-none mr-3 shrink-0 scale-90"
+        />
+        <span className="flex-1 truncate">{item.label}</span>
+        {item.shortcut && (
+          <span className="ml-auto text-text-sub text-xs font-mono tracking-wide">
+            {item.shortcut}
+          </span>
+        )}
+
+        {/* Submenu Content for checkbox items with children */}
+        {hasChildren && (
+          <DropdownMenuPrimitive.SubContent
+            ref={subMenuRef}
+            sideOffset={4}
+            align="start"
+            collisionPadding={8}
+            className={cn(
+              "z-50 min-w-[12rem] overflow-hidden rounded-[12px] border border-[color-mix(in_oklch,var(--color-border)_40%,transparent)]",
+              "bg-card/85 backdrop-blur-[12px] shadow-xl p-1.5 text-text-main",
+              "data-[state=open]:animate-in data-[state=closed]:animate-out",
+              "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+              "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2",
+              "data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+            )}
+            style={
+              subMenuPosition
+                ? {
+                    position: "fixed",
+                    top: subMenuPosition.top,
+                    left: subMenuPosition.left,
+                  }
+                : undefined
+            }
+          >
+            <SubMenuContext.Provider
+              value={{
+                level: level + 1,
+                openSubMenus,
+                registerSubMenu,
+                unregisterSubMenu,
+                isSubMenuOpen,
+              }}
+            >
+              {item.children?.map((child) => (
+                <MenuItem
+                  key={child.id}
+                  item={child}
+                  level={level + 1}
+                  onClose={onClose}
+                />
+              ))}
+            </SubMenuContext.Provider>
+          </DropdownMenuPrimitive.SubContent>
+        )}
+      </DropdownMenuPrimitive.CheckboxItem>
+    );
+  }
+
+  // Standard Item rendering
   return (
     <DropdownMenuPrimitive.Item
       ref={itemRef}
@@ -162,8 +257,8 @@ function MenuItem({ item, level, onClose }: MenuItemProps) {
           : undefined
       }
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-sm px-3 py-2 text-sm outline-none transition-colors",
-        "focus:bg-primary/10 focus:text-primary",
+        "relative flex cursor-default select-none items-center rounded-sm px-3 py-2 text-sm outline-none transition-all duration-100",
+        "focus:bg-brand-primary/10 focus:text-brand-primary active:scale-[0.98]",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         item.destructive
           ? "text-destructive focus:bg-destructive/10 focus:text-destructive"
@@ -201,9 +296,8 @@ function MenuItem({ item, level, onClose }: MenuItemProps) {
           align="start"
           collisionPadding={8}
           className={cn(
-            "z-50 min-w-[12rem] overflow-hidden rounded-surface border border-border/50",
-            "bg-card backdrop-blur-[var(--backdrop-blur)]",
-            "shadow-lg p-1",
+            "z-50 min-w-[12rem] overflow-hidden rounded-[12px] border border-[color-mix(in_oklch,var(--color-border)_40%,transparent)]",
+            "bg-card/85 backdrop-blur-[12px] shadow-xl p-1.5 text-text-main",
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
             "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
             "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2",
@@ -343,9 +437,8 @@ export function PopupMenu({
             align="start"
             collisionPadding={8}
             className={cn(
-              "z-50 min-w-[12rem] overflow-hidden rounded-surface border border-border/50",
-              "bg-card backdrop-blur-[var(--backdrop-blur)]",
-              "shadow-lg p-1",
+              "z-50 min-w-[12rem] overflow-hidden rounded-[12px] border border-[color-mix(in_oklch,var(--color-border)_40%,transparent)]",
+              "bg-card/85 backdrop-blur-[12px] shadow-xl p-1.5 text-text-main",
               "data-[state=open]:animate-in data-[state=closed]:animate-out",
               "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
               "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2",
