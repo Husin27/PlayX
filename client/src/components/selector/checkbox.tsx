@@ -52,7 +52,7 @@ const CheckboxGroupContext = createContext<CheckboxGroupContextValue | null>(
   null,
 );
 
-export const PremiumCheckbox = forwardRef<HTMLInputElement, CheckboxProps>(
+export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
   (
     {
       label,
@@ -201,9 +201,9 @@ export const PremiumCheckbox = forwardRef<HTMLInputElement, CheckboxProps>(
     );
   },
 );
-PremiumCheckbox.displayName = "PremiumCheckbox";
+Checkbox.displayName = "Checkbox";
 
-export const PremiumCheckboxGroup = ({
+export const CheckboxGroup = ({
   value,
   onChange,
   maxChoice,
@@ -250,6 +250,4 @@ export const PremiumCheckboxGroup = ({
     </CheckboxGroupContext.Provider>
   );
 };
-PremiumCheckboxGroup.displayName = "PremiumCheckboxGroup";
-
-export { CheckboxGroupContext };
+CheckboxGroup.displayName = "CheckboxGroup";

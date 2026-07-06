@@ -28,7 +28,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { TextBox } from "../data-entry/text-box";
 import { NumericEdit } from "../data-entry/numeric-edit";
 import { DateEdit } from "../data-entry/date-edit";
-import { PremiumCheckbox } from "../selector/checkbox";
+import { Checkbox } from "../selector/checkbox";
 import { ComboBox } from "../selector/combo-box";
 import { HintBox } from "../feedback/hint-box";
 import { StandalonePagination } from "../feedback/standalone-pagination";
@@ -148,7 +148,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
         defs.push({
           id: "__selection__",
           header: ({ table }) => (
-            <PremiumCheckbox
+            <Checkbox
               checked={table.getIsAllRowsSelected()}
               isIndeterminate={table.getIsSomeRowsSelected()}
               onChange={(checked) => table.toggleAllRowsSelected(!!checked)}
@@ -156,7 +156,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
             />
           ),
           cell: ({ row }) => (
-            <PremiumCheckbox
+            <Checkbox
               checked={row.getIsSelected()}
               onChange={(checked) => row.toggleSelected(!!checked)}
               className="h-4 w-4"
@@ -518,7 +518,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
           return <DateEdit {...commonProps} value={String(editValue ?? "")} />;
         case "checkbox":
           return (
-            <PremiumCheckbox
+            <Checkbox
               checked={editValue as boolean}
               onChange={(checked) => handleEditChange(checked)}
               className="h-4 w-4"
@@ -554,7 +554,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
 
       if (colConfig?.editType === "checkbox") {
         return (
-          <PremiumCheckbox
+          <Checkbox
             checked={value as boolean}
             disabled={!isEditable}
             onChange={

@@ -10,7 +10,7 @@ import { LucideIcon } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { HintBox } from "../feedback/hint-box";
-import { PremiumCheckbox } from "./checkbox";
+import { Checkbox } from "./checkbox";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -269,7 +269,7 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
                     )}
                   >
                     {multiple && (
-                      <PremiumCheckbox
+                      <Checkbox
                         checked={isSelected}
                         onChange={() => handleSelectionChange(option)}
                         disabled={disabled}

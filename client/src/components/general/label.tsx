@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // 🚦 LOCAL TYPE ISOLATION GATEWAY
-export interface PremiumLabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
+export interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
   isRequired?: boolean;
   error?: string;
   disabled?: boolean;
@@ -17,10 +17,7 @@ export interface PremiumLabelProps extends React.LabelHTMLAttributes<HTMLLabelEl
   hintIcon?: LucideIcon;
 }
 
-export const PremiumLabel = React.forwardRef<
-  HTMLLabelElement,
-  PremiumLabelProps
->(
+export const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
   (
     {
       isRequired = false,
@@ -200,7 +197,7 @@ export const PremiumLabel = React.forwardRef<
                 className={cn(
                   "fixed z-50 pointer-events-auto",
                   "bg-card backdrop-blur-[var(--backdrop-blur)]",
-                  "border border-[color-mix(in_oklch_var(--border)_50%_transparent)]",
+                  "border border-[color-mix(in_oklch,var(--color-border)_40%,transparent)]",
                   "rounded-surface",
                   "shadow-lg",
                   "p-3",
@@ -248,4 +245,4 @@ export const PremiumLabel = React.forwardRef<
   },
 );
 
-PremiumLabel.displayName = "PremiumLabel";
+Label.displayName = "Label";
