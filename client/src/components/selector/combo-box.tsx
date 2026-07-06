@@ -20,6 +20,7 @@ import {
   CUSTOM_DROPDOWN_CONFIGS,
   DropdownColumnLayout,
 } from "@/components/selector/custom-dropdown-column-config";
+import { Button } from "../general/button";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -249,42 +250,13 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
             setSearchQuery("");
             setHighlightedIndex(-1);
             break;
-          case "Tab":
-            setIsOpen(false);
-            setSearchQuery("");
-            setHighlightedIndex(-1);
-            break;
         }
       },
       [isOpen, filteredOptions, highlightedIndex, handleSelect],
     );
 
-    const handleInputChange = useCallback(
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        const query = e.target.value;
-        setSearchQuery(query);
-        if (!isOpen) setIsOpen(true);
-        setHighlightedIndex(0);
-      },
-      [isOpen],
-    );
-
-    const handleInputFocus = useCallback(() => {
-      if (options.length > 0) {
-        setIsOpen(true);
-      }
-    }, [options.length]);
-
-    const displayValue = selectedRecord
-      ? String(
-          selectedRecord[displayKey] ??
-            selectedRecord[valueKey] ??
-            String(selectedRecord),
-        )
-      : "";
-
-    const limitedActionButtons = actionButtons.slice(0, maxActionButtons);
     const limitedInnerIcons = innerIcons.slice(0, 4);
+    const limitedActionButtons = actionButtons.slice(0, maxActionButtons);
 
     return (
       <div className={cn("w-full", className)}>
@@ -303,10 +275,10 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
             )}
           </label>
         )}
-        <div className="relative">
+        <div className="flex items-center w-full gap-2">
           <div
             className={cn(
-              "relative flex items-center w-full gap-2",
+              "relative flex items-center flex-1 min-w-0",
               "bg-card/90 backdrop-blur-[var(--backdrop-blur)]",
               "border-[color-mix(in_oklch,var(--color-border)_60%,transparent)]",
               "rounded-surface",
@@ -348,46 +320,29 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                 "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
                 "w-full min-w-0",
                 prefixIcon || prefixText ? "pl-0" : "pl-4",
-                suffixIcon ||
-                  suffixText ||
-                  limitedInnerIcons.length > 0 ||
-                  clearable ||
-                  actionButtons.length > 0
+                suffixIcon || suffixText || limitedInnerIcons.length > 0
                   ? "pr-0"
                   : "pr-4",
               )}
               disabled={disabled}
               required={required}
               placeholder={placeholder}
-              value={displayValue ?? ""}
-              onChange={handleInputChange}
+              value={
+                selectedRecord
+                  ? ((selectedRecord[displayKey] as string) ??
+                    (selectedRecord[valueKey] as string) ??
+                    "")
+                  : ""
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!disabled) setIsOpen(!isOpen);
+              }}
               onKeyDown={handleKeyDown}
-              onFocus={handleInputFocus}
-              readOnly={!searchable}
-              aria-autocomplete={searchable ? "list" : "none"}
-              aria-expanded={isOpen}
-              aria-haspopup="listbox"
+              readOnly
               {...props}
             />
-            {limitedInnerIcons.length > 0 && (
-              <div className="absolute right-3 flex items-center gap-1">
-                {limitedInnerIcons.map((iconConfig, index) => (
-                  <span
-                    key={index}
-                    className={cn(
-                      "flex items-center justify-center",
-                      "w-5 h-5",
-                      "text-muted-foreground/60",
-                      iconConfig.className,
-                    )}
-                    aria-hidden="true"
-                  >
-                    {iconConfig.icon}
-                  </span>
-                ))}
-              </div>
-            )}
-            {(suffixIcon || suffixText) && (
+            {suffixIcon && (
               <div
                 className={cn(
                   "flex items-center justify-center px-3",
@@ -396,47 +351,38 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                 )}
                 aria-hidden="true"
               >
-                {suffixIcon && (
-                  <span className="w-4 h-4" aria-hidden="true">
-                    {suffixIcon}
-                  </span>
+                {suffixIcon}
+              </div>
+            )}
+            {suffixText && (
+              <div
+                className={cn(
+                  "flex items-center justify-center px-3",
+                  "text-muted-foreground/60",
+                  disabled && "opacity-50",
                 )}
-                {suffixText && (
-                  <span className="text-sm font-medium">{suffixText}</span>
-                )}
+                aria-hidden="true"
+              >
+                <span className="text-sm font-medium">{suffixText}</span>
               </div>
             )}
             {clearable && selectedRecord && !disabled && (
-              <button
+              <Button
                 type="button"
-                className={cn(
-                  "relative flex items-center justify-center",
-                  "w-9 h-9 rounded-md",
-                  "text-muted-foreground/60 hover:text-foreground",
-                  "bg-transparent hover:bg-accent",
-                  "transition-transform duration-100",
-                  "active:scale-95",
-                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20 focus-visible:border-amber-500",
-                )}
+                variant="ghost"
+                size="icon"
+                className="active:scale-95 transition-all duration-100"
                 onClick={handleClear}
                 aria-label="Clear selection"
               >
                 <X className="w-4 h-4" aria-hidden="true" />
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="button"
-              className={cn(
-                "relative flex items-center justify-center",
-                "w-9 h-9 rounded-md",
-                "text-muted-foreground/60 hover:text-foreground",
-                "bg-transparent hover:bg-accent",
-                "transition-transform duration-100",
-                "active:scale-95",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20 focus-visible:border-amber-500",
-                "disabled:opacity-50 disabled:pointer-events-none",
-                "flex-shrink-0",
-              )}
+              variant="ghost"
+              size="icon"
+              className="active:scale-95 transition-all duration-100 flex-shrink-0"
               disabled={disabled}
               onClick={() => setIsOpen(!isOpen)}
               aria-label={isOpen ? "Close dropdown" : "Open dropdown"}
@@ -446,32 +392,24 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
               ) : (
                 <ChevronDown className="w-4 h-4" aria-hidden="true" />
               )}
-            </button>
+            </Button>
           </div>
           {limitedActionButtons.length > 0 && (
             <div className="flex items-center gap-1.5 shrink-0 ml-1.5">
               {limitedActionButtons.map((action, index) => (
-                <button
+                <Button
                   key={index}
-                  type="button"
-                  className={cn(
-                    "relative flex items-center justify-center",
-                    "w-9 h-9 rounded-md",
-                    "text-muted-foreground/60 hover:text-foreground",
-                    "bg-transparent hover:bg-accent",
-                    "transition-transform duration-100",
-                    "active:scale-95",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20 focus-visible:border-amber-500",
-                    "disabled:opacity-50 disabled:pointer-events-none",
-                  )}
-                  aria-label={action.tooltipText}
+                  variant="ghost"
+                  size="icon"
                   disabled={disabled || action.disabled}
                   onClick={(e) =>
                     action.onClick(e, value ?? null, selectedRecord)
                   }
+                  className="active:scale-95 transition-all duration-100"
+                  aria-label={action.tooltipText}
                 >
                   {action.icon}
-                </button>
+                </Button>
               ))}
             </div>
           )}
@@ -582,16 +520,18 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                     };
 
                     return (
-                      <button
+                      <Button
                         key={(option[valueKey] as string | number) ?? index}
                         type="button"
                         role="option"
                         aria-selected={isSelected}
                         aria-highlighted={isHighlighted}
+                        variant="ghost"
+                        size="sm"
                         className={cn(
                           "w-full px-3 py-2 text-left text-sm",
                           "transition-colors duration-100",
-                          "focus:outline-none focus:bg-brand-primary/5 hover:bg-brand-primary/5",
+                          "active:scale-95",
                           isHighlighted && "bg-brand-primary/5 text-text-main",
                           isSelected &&
                             "bg-brand-primary/10 text-brand-primary font-semibold",
@@ -599,6 +539,7 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                         )}
                         onClick={() => handleSelect(option)}
                         onMouseEnter={() => setHighlightedIndex(index)}
+                        disabled={disabled}
                         style={{ maxHeight: maxDropdownHeight }}
                       >
                         {config.length > 0 ? (
@@ -622,7 +563,7 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                               )}
                           </span>
                         )}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -630,14 +571,14 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
 
               {actionButtons.length > maxActionButtons && (
                 <div className="border-t border-[color-mix(in_oklch,var(--color-border)_40%,transparent)] p-2 bg-card/50 backdrop-blur-[var(--backdrop-blur)]">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     className={cn(
                       "w-full flex items-center justify-center gap-2 px-3 py-2 text-sm",
                       "text-muted-foreground/70 hover:text-foreground",
-                      "bg-transparent hover:bg-[color-mix(in_oklch,var(--color-accent)_15%,transparent)]",
-                      "rounded-md transition-colors duration-150 ease-out",
-                      "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20 focus-visible:border-amber-500",
+                      "active:scale-95 transition-all duration-100",
                     )}
                     onClick={() => {}}
                   >
@@ -645,7 +586,7 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                     <span className="font-medium tracking-wide">
                       More actions ({actionButtons.length - maxActionButtons})
                     </span>
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

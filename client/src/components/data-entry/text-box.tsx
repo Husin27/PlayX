@@ -1,7 +1,8 @@
-import React, { forwardRef, useRef, useCallback } from "react";
+import React, { forwardRef, useRef, useCallback, useState } from "react";
 import { LucideIcon } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { Button } from "../general/button";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -19,15 +20,15 @@ export interface TextBoxActionButtonConfig {
   disabled?: boolean;
 }
 
-export interface TextBoxProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface TextBoxProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "onChange"
+> {
   label?: string;
   error?: string;
   innerIcons?: TextBoxInnerIconConfig[];
   actionButtons?: TextBoxActionButtonConfig[];
-  prefixIcon?: LucideIcon;
-  suffixIcon?: LucideIcon;
-  prefixText?: string;
-  suffixText?: string;
+  onChange?: (value: string) => void;
 }
 
 export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
@@ -37,21 +38,21 @@ export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
       error,
       innerIcons = [],
       actionButtons = [],
-      prefixIcon,
-      suffixIcon,
-      prefixText,
-      suffixText,
       className,
       disabled,
       required,
       placeholder,
-      type = "text",
+      value,
+      defaultValue,
+      onChange,
+      onBlur,
       ...props
     },
     ref,
   ) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const hasError = Boolean(error);
+    const [isFocused, setIsFocused] = useState(false);
 
     const handleRef = useCallback(
       (node: HTMLInputElement | null) => {
@@ -66,6 +67,25 @@ export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
       },
       [ref],
     );
+
+    const handleChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        onChange?.(e.target.value);
+      },
+      [onChange],
+    );
+
+    const handleBlur = useCallback(
+      (e: React.FocusEvent<HTMLInputElement>) => {
+        setIsFocused(false);
+        onBlur?.(e);
+      },
+      [onBlur],
+    );
+
+    const handleFocus = useCallback(() => {
+      setIsFocused(true);
+    }, []);
 
     const limitedInnerIcons = innerIcons.slice(0, 4);
     const limitedActionButtons = actionButtons.slice(0, 4);
@@ -101,66 +121,30 @@ export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
               hasError &&
                 "border-destructive/50 focus-within:ring-destructive/50 focus-within:border-destructive/50",
               disabled && "bg-muted/50",
+              isFocused && "ring-2 ring-amber-500/20 border-amber-500",
             )}
           >
-            {(prefixIcon || prefixText) && (
-              <div
-                className={cn(
-                  "flex items-center justify-center px-3",
-                  "text-muted-foreground/60",
-                  disabled && "opacity-50",
-                )}
-                aria-hidden="true"
-              >
-                {prefixIcon && (
-                  <span className="w-4 h-4" aria-hidden="true">
-                    {React.createElement(prefixIcon, { className: "w-4 h-4" })}
-                  </span>
-                )}
-                {prefixText && (
-                  <span className="text-sm font-medium">{prefixText}</span>
-                )}
-              </div>
-            )}
             <input
               ref={handleRef}
-              type={type}
+              type="text"
               className={cn(
                 "flex-1 bg-transparent border-none outline-none",
                 "px-4 py-2.5",
                 "text-text-main placeholder:text-muted-foreground/60",
                 "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
                 "w-full min-w-0",
-                prefixIcon || prefixText ? "pl-0" : "pl-4",
-                suffixIcon || suffixText || limitedInnerIcons.length > 0
-                  ? "pr-0"
-                  : "pr-4",
+                limitedInnerIcons.length > 0 ? "pr-12" : "pr-4",
               )}
               disabled={disabled}
               required={required}
               placeholder={placeholder}
-              onChange={(e) => props.onChange?.(e)}
+              value={value}
+              defaultValue={defaultValue}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              onFocus={handleFocus}
               {...props}
             />
-            {(suffixIcon || suffixText) && (
-              <div
-                className={cn(
-                  "flex items-center justify-center px-3",
-                  "text-muted-foreground/60",
-                  disabled && "opacity-50",
-                )}
-                aria-hidden="true"
-              >
-                {suffixIcon && (
-                  <span className="w-4 h-4" aria-hidden="true">
-                    {React.createElement(suffixIcon, { className: "w-4 h-4" })}
-                  </span>
-                )}
-                {suffixText && (
-                  <span className="text-sm font-medium">{suffixText}</span>
-                )}
-              </div>
-            )}
             {limitedInnerIcons.length > 0 && (
               <div className="absolute right-3 flex items-center gap-1">
                 {limitedInnerIcons.map((iconConfig, index) => (
@@ -183,27 +167,19 @@ export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
           {limitedActionButtons.length > 0 && (
             <div className="flex items-center gap-1.5 shrink-0">
               {limitedActionButtons.map((action, index) => (
-                <button
+                <Button
                   key={index}
-                  type="button"
-                  className={cn(
-                    "relative flex items-center justify-center",
-                    "w-9 h-9 rounded-md",
-                    "text-muted-foreground/60 hover:text-foreground",
-                    "bg-transparent hover:bg-accent",
-                    "transition-transform duration-100",
-                    "active:scale-95",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                    "disabled:opacity-50 disabled:pointer-events-none",
-                  )}
-                  aria-label={action.tooltipText}
+                  variant="ghost"
+                  size="icon"
                   disabled={disabled || action.disabled}
                   onClick={(e) =>
                     action.onClick(e, inputRef.current?.value || "")
                   }
+                  className="active:scale-95 transition-all duration-100"
+                  aria-label={action.tooltipText}
                 >
-                  <action.icon className="w-4 h-4" aria-hidden="true" />
-                </button>
+                  <action.icon className="w-4 h-4" />
+                </Button>
               ))}
             </div>
           )}

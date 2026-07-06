@@ -8,6 +8,7 @@ import React, {
 import { LucideIcon } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { Button } from "../general/button";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -296,25 +297,17 @@ export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(
           {limitedActionButtons.length > 0 && (
             <div className="flex items-center gap-1.5 shrink-0">
               {limitedActionButtons.map((action, index) => (
-                <button
+                <Button
                   key={index}
-                  type="button"
-                  className={cn(
-                    "relative flex items-center justify-center",
-                    "w-9 h-9 rounded-md",
-                    "text-muted-foreground/60 hover:text-foreground",
-                    "bg-transparent hover:bg-accent",
-                    "transition-transform duration-100",
-                    "active:scale-95",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                    "disabled:opacity-50 disabled:pointer-events-none",
-                  )}
-                  aria-label={action.tooltipText}
+                  variant="ghost"
+                  size="icon"
                   disabled={disabled || action.disabled}
                   onClick={() => action.onClick(numericValue)}
+                  className="active:scale-95 transition-all duration-100"
+                  aria-label={action.tooltipText}
                 >
-                  <action.icon className="w-4 h-4" aria-hidden="true" />
-                </button>
+                  <action.icon className="w-4 h-4" />
+                </Button>
               ))}
             </div>
           )}
