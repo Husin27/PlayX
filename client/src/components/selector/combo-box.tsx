@@ -21,6 +21,8 @@ import {
   DropdownColumnLayout,
 } from "@/components/selector/custom-dropdown-column-config";
 import { Button } from "../general/button";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -49,6 +51,8 @@ export interface ComboBoxProps extends Omit<
 > {
   label?: string;
   error?: string;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
   innerIcons?: Array<{ icon: React.ReactNode; className?: string }>;
   actionButtons?: ComboBoxActionButtonConfig[];
   prefixIcon?: React.ReactNode;
@@ -81,6 +85,8 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
     {
       label,
       error,
+      hint,
+      popupMenu,
       innerIcons = [],
       actionButtons = [],
       prefixIcon,
@@ -259,7 +265,15 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
     const limitedActionButtons = actionButtons.slice(0, maxActionButtons);
 
     return (
-      <div className={cn("w-full", className)}>
+      <div
+        className={cn("w-full", className)}
+        onContextMenu={(e) => popupMenu?.trigger(e)}
+      >
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span className="text-sm text-text-muted" />
+          </HintBox>
+        )}
         {label && (
           <label
             className={cn(

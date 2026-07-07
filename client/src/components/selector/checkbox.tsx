@@ -11,6 +11,8 @@ import React, {
 import { Check, Minus } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
 
 // 🚀 LOCAL VANILLA CN UTILITY CORES
 export function cn(...inputs: ClassValue[]) {
@@ -24,6 +26,8 @@ export interface CheckboxProps extends Omit<
 > {
   label?: string;
   error?: string;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
   isIndeterminate?: boolean;
   value?: string;
   checked?: boolean;
@@ -36,6 +40,8 @@ export interface CheckboxGroupProps {
   maxChoice?: number;
   disabled?: boolean;
   error?: string;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
   children: React.ReactNode;
   className?: string;
 }
@@ -57,6 +63,8 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     {
       label,
       error,
+      hint,
+      popupMenu,
       isIndeterminate = false,
       value,
       checked,
@@ -85,6 +93,10 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       groupMaxChoice !== undefined &&
       groupValue.length >= groupMaxChoice &&
       !isChecked;
+
+    // hint and popupMenu are handled by CheckboxGroup
+    void hint;
+    void popupMenu;
 
     useEffect(() => {
       if (inputRef.current) {
@@ -209,6 +221,8 @@ export const CheckboxGroup = ({
   maxChoice,
   disabled,
   error,
+  hint,
+  popupMenu,
   children,
   className,
 }: CheckboxGroupProps) => {
@@ -230,7 +244,13 @@ export const CheckboxGroup = ({
         role="group"
         aria-invalid={!!error}
         aria-disabled={disabled}
+        onContextMenu={(e) => popupMenu?.trigger(e)}
       >
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span className="text-sm text-text-muted" />
+          </HintBox>
+        )}
         {children}
         {error && (
           <p

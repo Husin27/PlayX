@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
 
 // 🚀 LOCAL VANILLA CN UTILITY CORES
 export function cn(...inputs: ClassValue[]) {
@@ -17,6 +19,8 @@ export interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   name?: string;
   size?: AvatarSize;
   shape?: AvatarShape;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
 }
 
 export function Avatar({
@@ -87,19 +91,28 @@ export function Avatar({
     setIsLoaded(true);
   };
 
+  const { hint, popupMenu, ...avatarProps } = props;
+
   return (
-    <div {...props} className={containerClasses}>
-      {src && !imageError && (
-        <img
-          src={src}
-          alt={alt || name}
-          className={imageClasses}
-          onError={handleImageError}
-          onLoad={handleImageLoad}
-        />
+    <div className="inline-flex" onContextMenu={(e) => popupMenu?.trigger(e)}>
+      {hint && (
+        <HintBox content={hint} className="mb-1.5">
+          <span className="text-sm text-text-muted" />
+        </HintBox>
       )}
-      <div className={fallbackClasses} aria-hidden={!!src && !imageError}>
-        {initials}
+      <div {...avatarProps} className={containerClasses}>
+        {src && !imageError && (
+          <img
+            src={src}
+            alt={alt || name}
+            className={imageClasses}
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+          />
+        )}
+        <div className={fallbackClasses} aria-hidden={!!src && !imageError}>
+          {initials}
+        </div>
       </div>
     </div>
   );

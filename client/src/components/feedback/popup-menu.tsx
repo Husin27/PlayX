@@ -10,6 +10,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export interface PopupMenuConfig {
+  trigger: (e: React.MouseEvent, recordRow?: Record<string, unknown>) => void;
+  [key: string]: unknown;
+}
 // 🚦 LOCAL TYPE ISOLATION GATEWAY
 export interface PopupMenuItemConfig {
   id: string;
@@ -24,6 +28,8 @@ export interface PopupMenuItemConfig {
   isCheckbox?: boolean;
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
+  // Hint support for menu items
+  hint?: string;
 }
 
 export interface PopupMenuProps {
@@ -274,6 +280,11 @@ function MenuItem({ item, level, onClose }: MenuItemProps) {
         </span>
       )}
       <span className="flex-1 truncate">{item.label}</span>
+      {item.hint && (
+        <span className="ml-2 text-text-sub text-xs font-mono tracking-wide opacity-70">
+          {item.hint}
+        </span>
+      )}
       {hasChildren && (
         <DropdownMenuPrimitive.SubTrigger
           className="flex items-center ml-auto"

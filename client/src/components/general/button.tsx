@@ -8,6 +8,8 @@ import React, {
 import { Loader2, LucideIcon } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
 
 // 🚀 LOCAL VANILLA CN UTILITY CORES
 export function cn(...inputs: ClassValue[]) {
@@ -34,6 +36,8 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   isDisabled?: boolean;
   asChild?: boolean;
   loadingPosition?: "left" | "right" | "center";
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
 }
 
 const variantStyles = {
@@ -183,46 +187,58 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       [ripple],
     );
 
+    const { hint, popupMenu, ...buttonProps } = props;
+
     return (
-      <button
-        ref={ref}
-        className={baseClasses}
-        disabled={isActuallyDisabled}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
-        aria-busy={isLoading}
-        aria-disabled={isActuallyDisabled}
-        {...props}
-      >
-        {showLoadingSpinner && loadingPosition === "left" && (
-          <Loader2
-            className={cn(loadingSize, "animate-spin", "shrink-0")}
-            aria-hidden="true"
-          />
+      <div className="inline-flex" onContextMenu={(e) => popupMenu?.trigger(e)}>
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span className="text-sm text-text-muted" />
+          </HintBox>
         )}
-        {hasLeftIcon && LeftIcon && (
-          <LeftIcon className={cn(iconSize, "shrink-0")} aria-hidden="true" />
-        )}
-        {!isLoading && children}
-        {showLoadingText && <span>{loadingText}</span>}
-        {hasRightIcon && RightIcon && (
-          <RightIcon className={cn(iconSize, "shrink-0")} aria-hidden="true" />
-        )}
-        {showLoadingSpinner && loadingPosition === "right" && (
-          <Loader2
-            className={cn(loadingSize, "animate-spin", "shrink-0")}
-            aria-hidden="true"
-          />
-        )}
-        {ripple && (
-          <span
-            className="absolute rounded-full bg-white/30 pointer-events-none animate-[ripple_600ms_ease-out]"
-            style={rippleStyles}
-            aria-hidden="true"
-          />
-        )}
-      </button>
+        <button
+          ref={ref}
+          className={baseClasses}
+          disabled={isActuallyDisabled}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          aria-busy={isLoading}
+          aria-disabled={isActuallyDisabled}
+          {...buttonProps}
+        >
+          {showLoadingSpinner && loadingPosition === "left" && (
+            <Loader2
+              className={cn(loadingSize, "animate-spin", "shrink-0")}
+              aria-hidden="true"
+            />
+          )}
+          {hasLeftIcon && LeftIcon && (
+            <LeftIcon className={cn(iconSize, "shrink-0")} aria-hidden="true" />
+          )}
+          {!isLoading && children}
+          {showLoadingText && <span>{loadingText}</span>}
+          {hasRightIcon && RightIcon && (
+            <RightIcon
+              className={cn(iconSize, "shrink-0")}
+              aria-hidden="true"
+            />
+          )}
+          {showLoadingSpinner && loadingPosition === "right" && (
+            <Loader2
+              className={cn(loadingSize, "animate-spin", "shrink-0")}
+              aria-hidden="true"
+            />
+          )}
+          {ripple && (
+            <span
+              className="absolute rounded-full bg-white/30 pointer-events-none animate-[ripple_600ms_ease-out]"
+              style={rippleStyles}
+              aria-hidden="true"
+            />
+          )}
+        </button>
+      </div>
     );
   },
 );

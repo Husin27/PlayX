@@ -3,6 +3,8 @@ import { LucideIcon } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Button } from "../general/button";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -26,6 +28,8 @@ export interface TextBoxProps extends Omit<
 > {
   label?: string;
   error?: string;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
   innerIcons?: TextBoxInnerIconConfig[];
   actionButtons?: TextBoxActionButtonConfig[];
   onChange?: (value: string) => void;
@@ -36,6 +40,8 @@ export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
     {
       label,
       error,
+      hint,
+      popupMenu,
       innerIcons = [],
       actionButtons = [],
       className,
@@ -91,7 +97,15 @@ export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
     const limitedActionButtons = actionButtons.slice(0, 4);
 
     return (
-      <div className={cn("w-full", className)}>
+      <div
+        className={cn("w-full", className)}
+        onContextMenu={(e) => popupMenu?.trigger(e)}
+      >
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span className="text-sm text-text-muted" />
+          </HintBox>
+        )}
         {label && (
           <label
             className={cn(

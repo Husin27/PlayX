@@ -8,6 +8,9 @@ import React, {
 import { Bold, Italic, Underline, List, LucideIcon } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
+import { Button } from "../general/button";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -25,6 +28,8 @@ export interface HtmlMemoBoxProps extends Omit<
 > {
   label?: string;
   error?: string;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
   defaultValue?: string;
   onChange?: (html: string) => void;
   actionIcons?: HtmlMemoActionConfig[];
@@ -43,6 +48,8 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
     {
       label,
       error,
+      hint,
+      popupMenu,
       defaultValue = "",
       onChange,
       actionIcons = [],
@@ -121,7 +128,16 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
     ];
 
     return (
-      <div className={cn("w-full", className)} {...props}>
+      <div
+        className={cn("w-full", className)}
+        onContextMenu={(e) => popupMenu?.trigger(e)}
+        {...props}
+      >
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span className="text-sm text-text-muted" />
+          </HintBox>
+        )}
         {label && (
           <label
             className={cn(
@@ -151,25 +167,18 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
             aria-label="Text formatting"
           >
             {toolbarButtons.map((btn, index) => (
-              <button
+              <Button
                 key={index}
                 type="button"
-                className={cn(
-                  "relative flex items-center justify-center",
-                  "w-8 h-8 rounded-md",
-                  "text-muted-foreground/60 hover:text-foreground",
-                  "bg-transparent hover:bg-accent",
-                  "transition-all duration-150 ease-out",
-                  "active:scale-95",
-                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                  "disabled:opacity-50 disabled:pointer-events-none",
-                )}
+                variant="ghost"
+                size="icon"
+                className="active:scale-95 transition-all duration-100"
                 aria-label={btn.tooltip}
                 disabled={disabled}
                 onClick={() => executeCommand(btn.command)}
               >
                 <btn.icon className="w-4 h-4" aria-hidden="true" />
-              </button>
+              </Button>
             ))}
           </div>
           <div
@@ -206,25 +215,18 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
           {limitedActionIcons.length > 0 && (
             <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
               {limitedActionIcons.map((action, index) => (
-                <button
+                <Button
                   key={index}
                   type="button"
-                  className={cn(
-                    "relative flex items-center justify-center",
-                    "w-8 h-8 rounded-md",
-                    "text-muted-foreground/60 hover:text-foreground",
-                    "bg-transparent hover:bg-accent",
-                    "transition-all duration-150 ease-out",
-                    "active:scale-95",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                    "disabled:opacity-50 disabled:pointer-events-none",
-                  )}
+                  variant="ghost"
+                  size="icon"
+                  className="active:scale-95 transition-all duration-100"
                   aria-label={action.tooltipText}
                   disabled={disabled}
                   onClick={() => action.onClick(htmlContent)}
                 >
                   <action.icon className="w-4 h-4" aria-hidden="true" />
-                </button>
+                </Button>
               ))}
             </div>
           )}

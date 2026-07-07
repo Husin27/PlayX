@@ -9,6 +9,8 @@ import { LucideIcon } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Button } from "../general/button";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,6 +34,8 @@ export interface NumericEditProps extends Omit<
 > {
   label?: string;
   error?: string;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
   prefixSymbol?: string;
   f2Editable?: boolean;
   innerIcons?: NumericEditInnerIconConfig[];
@@ -49,6 +53,8 @@ export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(
     {
       label,
       error,
+      hint,
+      popupMenu,
       prefixSymbol = "",
       f2Editable = false,
       innerIcons = [],
@@ -180,7 +186,15 @@ export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(
     const numericValue = parseToNumber(displayValue);
 
     return (
-      <div className={cn("w-full", className)}>
+      <div
+        className={cn("w-full", className)}
+        onContextMenu={(e) => popupMenu?.trigger(e)}
+      >
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span className="text-sm text-text-muted" />
+          </HintBox>
+        )}
         {label && (
           <label
             className={cn(

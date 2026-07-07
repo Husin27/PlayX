@@ -9,6 +9,8 @@ import { LucideIcon } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Button } from "../general/button";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,6 +34,8 @@ export interface DateEditProps extends Omit<
 > {
   label?: string;
   error?: string;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
   dbFormat?: string;
   innerIcons?: DateEditInnerIconConfig[];
   actionButtons?: DateEditActionButtonConfig[];
@@ -75,6 +79,8 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
     {
       label,
       error,
+      hint,
+      popupMenu,
       dbFormat = DEFAULT_DB_FORMAT,
       innerIcons = [],
       actionButtons = [],
@@ -150,7 +156,15 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
     const limitedActionButtons = actionButtons.slice(0, 4);
 
     return (
-      <div className={cn("w-full", className)}>
+      <div
+        className={cn("w-full", className)}
+        onContextMenu={(e) => popupMenu?.trigger(e)}
+      >
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span className="text-sm text-text-muted" />
+          </HintBox>
+        )}
         {label && (
           <label
             className={cn(

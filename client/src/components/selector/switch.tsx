@@ -3,6 +3,8 @@
 import React, { forwardRef, useRef } from "react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
 
 // 🚀 LOCAL VANILLA CN UTILITY CORES
 export function cn(...inputs: ClassValue[]) {
@@ -16,12 +18,27 @@ export interface SwitchProps extends Omit<
 > {
   label?: string;
   error?: string;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
   checked?: boolean;
   onChange?: (checked: boolean) => void;
 }
 
 export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
-  ({ label, error, checked, onChange, className, disabled, ...props }, ref) => {
+  (
+    {
+      label,
+      error,
+      hint,
+      popupMenu,
+      checked,
+      onChange,
+      className,
+      disabled,
+      ...props
+    },
+    ref,
+  ) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const isChecked = checked ?? false;
     const hasError = !!error;
@@ -79,48 +96,55 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
     );
 
     return (
-      <label className={labelClasses}>
-        <input
-          ref={(el) => {
-            inputRef.current = el;
-            if (ref) {
-              if (typeof ref === "function") {
-                ref(el);
-              } else {
-                ref.current = el;
-              }
-            }
-          }}
-          type="checkbox"
-          role="switch"
-          checked={isChecked}
-          disabled={isActuallyDisabled}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          aria-checked={isChecked}
-          aria-invalid={hasError ? "true" : "false"}
-          aria-disabled={isActuallyDisabled}
-          aria-required={props.required}
-          className="sr-only peer"
-          {...props}
-        />
-        <div className={switchTrackClasses} aria-hidden="true">
-          <span className={thumbClasses} aria-hidden="true" />
-        </div>
-        {label && (
-          <span
-            className={cn(
-              "text-sm font-medium leading-none",
-              "transition-colors duration-200 ease-out",
-              "text-text-main",
-              hasError && "text-destructive/90",
-              isActuallyDisabled && "opacity-50",
-            )}
-          >
-            {label}
-          </span>
+      <div className="w-full" onContextMenu={(e) => popupMenu?.trigger(e)}>
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span className="text-sm text-text-muted" />
+          </HintBox>
         )}
-      </label>
+        <label className={labelClasses}>
+          <input
+            ref={(el) => {
+              inputRef.current = el;
+              if (ref) {
+                if (typeof ref === "function") {
+                  ref(el);
+                } else {
+                  ref.current = el;
+                }
+              }
+            }}
+            type="checkbox"
+            role="switch"
+            checked={isChecked}
+            disabled={isActuallyDisabled}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            aria-checked={isChecked}
+            aria-invalid={hasError ? "true" : "false"}
+            aria-disabled={isActuallyDisabled}
+            aria-required={props.required}
+            className="sr-only peer"
+            {...props}
+          />
+          <div className={switchTrackClasses} aria-hidden="true">
+            <span className={thumbClasses} aria-hidden="true" />
+          </div>
+          {label && (
+            <span
+              className={cn(
+                "text-sm font-medium leading-none",
+                "transition-colors duration-200 ease-out",
+                "text-text-main",
+                hasError && "text-destructive/90",
+                isActuallyDisabled && "opacity-50",
+              )}
+            >
+              {label}
+            </span>
+          )}
+        </label>
+      </div>
     );
   },
 );

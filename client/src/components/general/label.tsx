@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { HelpCircle, LucideIcon } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
 
 // 🚀 LOCAL VANILLA CN UTILITY CORES
 export function cn(...inputs: ClassValue[]) {
@@ -15,6 +17,8 @@ export interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> 
   disabled?: boolean;
   hintContent?: React.ReactNode;
   hintIcon?: LucideIcon;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
 }
 
 export const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
@@ -132,115 +136,124 @@ export const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
       }
     }, []);
 
+    const { hint, popupMenu, ...labelProps } = props;
+
     return (
-      <label
-        ref={ref}
-        className={cn(
-          "inline-flex items-center gap-1.5",
-          "font-sans text-sm font-medium leading-none",
-          "transition-colors duration-200 ease-out",
-          "text-text-main",
-          hasError && "text-destructive/90",
-          disabled && "opacity-50 pointer-events-none cursor-not-allowed",
-          className,
+      <div className="inline-flex" onContextMenu={(e) => popupMenu?.trigger(e)}>
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span className="text-sm text-text-muted" />
+          </HintBox>
         )}
-        {...props}
-      >
-        {children}
-        {isRequired && (
-          <span
-            className={cn(
-              "inline-flex items-center justify-center",
-              "text-destructive",
-              "transition-opacity duration-200 ease-out",
-              "aria-hidden",
-            )}
-            aria-hidden="true"
-          >
-            *
-          </span>
-        )}
-        {hintContent && (
-          <span className="relative inline-flex items-center justify-center">
-            <button
-              ref={triggerRef}
-              type="button"
+        <label
+          ref={ref}
+          className={cn(
+            "inline-flex items-center gap-1.5",
+            "font-sans text-sm font-medium leading-none",
+            "transition-colors duration-200 ease-out",
+            "text-text-main",
+            hasError && "text-destructive/90",
+            disabled && "opacity-50 pointer-events-none cursor-not-allowed",
+            className,
+          )}
+          {...labelProps}
+        >
+          {children}
+          {isRequired && (
+            <span
               className={cn(
-                "relative flex items-center justify-center",
-                "w-5 h-5 rounded-md",
-                "text-muted-foreground/60 hover:text-foreground",
-                "bg-transparent hover:bg-accent",
-                "transition-all duration-150 ease-out",
-                "active:scale-95",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                "disabled:opacity-50 disabled:pointer-events-none",
-                !isInteractive &&
-                  "opacity-50 pointer-events-none cursor-not-allowed",
+                "inline-flex items-center justify-center",
+                "text-destructive",
+                "transition-opacity duration-200 ease-out",
+                "aria-hidden",
               )}
-              aria-label="Help"
-              aria-describedby={isHintOpen ? "hint-tooltip" : undefined}
-              aria-expanded={isHintOpen}
-              disabled={!isInteractive}
-              onMouseEnter={handleTriggerEnter}
-              onMouseLeave={handleTriggerLeave}
-              onFocus={handleTriggerEnter}
-              onBlur={handleTriggerLeave}
-              onKeyDown={handleKeyDown}
+              aria-hidden="true"
             >
-              <HintIcon className="w-3.5 h-3.5" aria-hidden="true" />
-            </button>
-            {isHintOpen && (
-              <div
-                ref={contentRef}
-                id="hint-tooltip"
-                role="tooltip"
+              *
+            </span>
+          )}
+          {hintContent && (
+            <span className="relative inline-flex items-center justify-center">
+              <button
+                ref={triggerRef}
+                type="button"
                 className={cn(
-                  "fixed z-50 pointer-events-auto",
-                  "bg-card backdrop-blur-[var(--backdrop-blur)]",
-                  "border border-[color-mix(in_oklch,var(--color-border)_40%,transparent)]",
-                  "rounded-surface",
-                  "shadow-lg",
-                  "p-3",
-                  "max-w-xs",
-                  "text-sm text-card-foreground",
-                  "font-sans",
-                  "transition-all duration-200 ease-out",
-                  "opacity-0 scale-95 data-[state=open]:opacity-100 data-[state=open]:scale-100",
-                  "data-[side=bottom]:translate-y-2 data-[side=top]:-translate-y-2",
-                  "data-[side=left]:-translate-x-2 data-[side=right]:translate-x-2",
+                  "relative flex items-center justify-center",
+                  "w-5 h-5 rounded-md",
+                  "text-muted-foreground/60 hover:text-foreground",
+                  "bg-transparent hover:bg-accent",
+                  "transition-all duration-150 ease-out",
+                  "active:scale-95",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  "disabled:opacity-50 disabled:pointer-events-none",
+                  !isInteractive &&
+                    "opacity-50 pointer-events-none cursor-not-allowed",
                 )}
-                data-state="open"
-                data-side={currentSide}
-                style={positionStylesRef.current}
-                onMouseEnter={handleContentEnter}
-                onMouseLeave={handleContentLeave}
+                aria-label="Help"
+                aria-describedby={isHintOpen ? "hint-tooltip" : undefined}
+                aria-expanded={isHintOpen}
+                disabled={!isInteractive}
+                onMouseEnter={handleTriggerEnter}
+                onMouseLeave={handleTriggerLeave}
+                onFocus={handleTriggerEnter}
+                onBlur={handleTriggerLeave}
+                onKeyDown={handleKeyDown}
               >
-                {hintContent}
+                <HintIcon className="w-3.5 h-3.5" aria-hidden="true" />
+              </button>
+              {isHintOpen && (
                 <div
-                  style={
-                    {
-                      width: 0,
-                      height: 0,
-                      borderLeft: "6px solid transparent",
-                      borderRight: "6px solid transparent",
-                      borderTop: currentSide === "top" ? "6px solid" : "none",
-                      borderBottom:
-                        currentSide === "bottom" ? "6px solid" : "none",
-                      bottom: currentSide === "top" ? "-6px" : "auto",
-                      top: currentSide === "bottom" ? "-6px" : "auto",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      position: "absolute",
-                      pointerEvents: "none",
-                    } as React.CSSProperties
-                  }
-                  aria-hidden="true"
-                />
-              </div>
-            )}
-          </span>
-        )}
-      </label>
+                  ref={contentRef}
+                  id="hint-tooltip"
+                  role="tooltip"
+                  className={cn(
+                    "fixed z-50 pointer-events-auto",
+                    "bg-card backdrop-blur-[var(--backdrop-blur)]",
+                    "border border-[color-mix(in_oklch,var(--color-border)_40%,transparent)]",
+                    "rounded-surface",
+                    "shadow-lg",
+                    "p-3",
+                    "max-w-xs",
+                    "text-sm text-card-foreground",
+                    "font-sans",
+                    "transition-all duration-200 ease-out",
+                    "opacity-0 scale-95 data-[state=open]:opacity-100 data-[state=open]:scale-100",
+                    "data-[side=bottom]:translate-y-2 data-[side=top]:-translate-y-2",
+                    "data-[side=left]:-translate-x-2 data-[side=right]:translate-x-2",
+                  )}
+                  data-state="open"
+                  data-side={currentSide}
+                  style={positionStylesRef.current}
+                  onMouseEnter={handleContentEnter}
+                  onMouseLeave={handleContentLeave}
+                >
+                  {hintContent}
+                  <div
+                    style={
+                      {
+                        width: 0,
+                        height: 0,
+                        borderLeft: "6px solid transparent",
+                        borderRight: "6px solid transparent",
+                        borderTop: currentSide === "top" ? "6px solid" : "none",
+                        borderBottom:
+                          currentSide === "bottom" ? "6px solid" : "none",
+                        bottom: currentSide === "top" ? "-6px" : "auto",
+                        top: currentSide === "bottom" ? "-6px" : "auto",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        position: "absolute",
+                        pointerEvents: "none",
+                      } as React.CSSProperties
+                    }
+                    aria-hidden="true"
+                  />
+                </div>
+              )}
+            </span>
+          )}
+        </label>
+      </div>
     );
   },
 );

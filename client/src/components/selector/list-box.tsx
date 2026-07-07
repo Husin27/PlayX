@@ -11,6 +11,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { HintBox } from "../feedback/hint-box";
 import { Checkbox } from "./checkbox";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -38,6 +39,7 @@ export interface ListBoxProps extends Omit<
   label?: string;
   error?: string;
   hint?: string;
+  popupMenu?: PopupMenuConfig;
   options: ListBoxOption[];
   value?: unknown | unknown[];
   onChange?: (selectedValue: unknown, fullRecordRows: unknown) => void;
@@ -54,6 +56,7 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
       label,
       error,
       hint,
+      popupMenu,
       options = [],
       value,
       onChange,
@@ -196,7 +199,17 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
     const hasError = Boolean(error);
 
     return (
-      <div ref={ref} className={cn("w-full", className)} {...props}>
+      <div
+        ref={ref}
+        className={cn("w-full", className)}
+        onContextMenu={(e) => popupMenu?.trigger(e)}
+        {...props}
+      >
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span className="text-sm text-text-muted" />
+          </HintBox>
+        )}
         {label && (
           <label
             className={cn(
@@ -206,11 +219,6 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
           >
             {label}
           </label>
-        )}
-        {hint && (
-          <HintBox content={hint} className="mb-1.5">
-            {hint}
-          </HintBox>
         )}
         <div
           ref={containerRef}

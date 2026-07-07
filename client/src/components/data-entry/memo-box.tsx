@@ -2,6 +2,9 @@ import React, { forwardRef, useEffect, useRef, useCallback } from "react";
 import { LucideIcon } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
+import { Button } from "../general/button";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -16,6 +19,8 @@ export interface MemoBoxActionConfig {
 export interface MemoBoxProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
   actionIcons?: MemoBoxActionConfig[];
 }
 
@@ -24,6 +29,8 @@ export const MemoBox = forwardRef<HTMLTextAreaElement, MemoBoxProps>(
     {
       label,
       error,
+      hint,
+      popupMenu,
       actionIcons = [],
       className,
       disabled,
@@ -69,7 +76,15 @@ export const MemoBox = forwardRef<HTMLTextAreaElement, MemoBoxProps>(
     const limitedActionIcons = actionIcons.slice(0, 4);
 
     return (
-      <div className={cn("w-full", className)}>
+      <div
+        className={cn("w-full", className)}
+        onContextMenu={(e) => popupMenu?.trigger(e)}
+      >
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span className="text-sm text-text-muted" />
+          </HintBox>
+        )}
         {label && (
           <label
             className={cn(
@@ -113,25 +128,18 @@ export const MemoBox = forwardRef<HTMLTextAreaElement, MemoBoxProps>(
           {limitedActionIcons.length > 0 && (
             <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
               {limitedActionIcons.map((action, index) => (
-                <button
+                <Button
                   key={index}
                   type="button"
-                  className={cn(
-                    "relative flex items-center justify-center",
-                    "w-8 h-8 rounded-md",
-                    "text-muted-foreground/60 hover:text-foreground",
-                    "bg-transparent hover:bg-accent",
-                    "transition-all duration-150 ease-out",
-                    "active:scale-95",
-                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                    "disabled:opacity-50 disabled:pointer-events-none",
-                  )}
+                  variant="ghost"
+                  size="icon"
+                  className="active:scale-95 transition-all duration-100"
                   aria-label={action.tooltipText}
                   disabled={disabled}
                   onClick={action.onClick}
                 >
                   <action.icon className="w-4 h-4" aria-hidden="true" />
-                </button>
+                </Button>
               ))}
             </div>
           )}

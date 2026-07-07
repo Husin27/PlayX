@@ -32,14 +32,10 @@ import { Checkbox } from "../selector/checkbox";
 import { ComboBox } from "../selector/combo-box";
 import { HintBox } from "../feedback/hint-box";
 import { StandalonePagination } from "../feedback/standalone-pagination";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-
-export interface PopupMenuConfig {
-  trigger: (e: React.MouseEvent, recordRow?: Record<string, unknown>) => void;
-  [key: string]: unknown;
 }
 
 export interface GridColumnLayout {
@@ -51,6 +47,12 @@ export interface GridColumnLayout {
   editOptions?: Record<string, unknown>[];
   enableSorting?: boolean;
   enableFiltering?: boolean;
+  // Cell-level hint function
+  cellHint?: (value: unknown, recordRow: Record<string, unknown>) => string;
+  // Icon hint for accessory icons
+  iconHint?: string;
+  // Cell-level popup menu override
+  cellPopupMenu?: PopupMenuConfig;
 }
 
 export interface GridDataChangePayload {
@@ -579,9 +581,45 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
         );
       }
 
+      // Cell-level hint and icon hint rendering
+      const cellHintText = colConfig?.cellHint
+        ? colConfig.cellHint(value, row.original)
+        : undefined;
+      const iconHintText = colConfig?.iconHint;
+
       return (
-        <div className={cn("truncate", getAlignmentClass(colConfig?.align))}>
-          {String(value ?? "")}
+        <div
+          className={cn(
+            "relative truncate",
+            getAlignmentClass(colConfig?.align),
+          )}
+        >
+          {cellHintText && (
+            <HintBox
+              content={cellHintText}
+              position="top"
+              className="inline-block"
+            >
+              <span className="underline underline-offset-2 decoration-dotted decoration-text-muted cursor-help">
+                {String(value ?? "")}
+              </span>
+            </HintBox>
+          )}
+          {!cellHintText && <span>{String(value ?? "")}</span>}
+          {iconHintText && (
+            <HintBox
+              content={iconHintText}
+              position="top"
+              className="ml-1 inline-block"
+            >
+              <span
+                className="text-text-muted cursor-help"
+                aria-label={iconHintText}
+              >
+                ℹ️
+              </span>
+            </HintBox>
+          )}
         </div>
       );
     };
@@ -843,6 +881,15 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
                           ),
                         )}
                         style={{ width: column.getSize() }}
+                        onContextMenu={(e) => {
+                          const colConfig = columns.find(
+                            (c) => c.key === column.id,
+                          );
+                          if (colConfig?.cellPopupMenu) {
+                            e.stopPropagation();
+                            colConfig.cellPopupMenu.trigger(e, row.original);
+                          }
+                        }}
                       >
                         {renderCellContent(column, row)}
                       </td>

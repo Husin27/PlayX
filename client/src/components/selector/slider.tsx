@@ -10,6 +10,8 @@ import React, {
 } from "react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
 
 // 🚀 LOCAL VANILLA CN UTILITY CORES
 export function cn(...inputs: ClassValue[]) {
@@ -23,6 +25,8 @@ export interface SliderProps extends Omit<
 > {
   label?: string;
   error?: string;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
   min?: number;
   max?: number;
   step?: number;
@@ -39,6 +43,8 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
     {
       label,
       error,
+      hint,
+      popupMenu,
       min = 0,
       max = 100,
       step = 1,
@@ -213,7 +219,7 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
         document.addEventListener("mouseup", handleMouseUp);
         document.addEventListener(
           "touchmove",
-          handleMouseMove as EventListener,
+          handleMouseMove as EventListener as EventListener,
           { passive: false },
         );
         document.addEventListener("touchend", handleMouseUp);
@@ -403,7 +409,13 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
         role="group"
         aria-invalid={hasError}
         aria-disabled={isActuallyDisabled}
+        onContextMenu={(e) => popupMenu?.trigger(e)}
       >
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span className="text-sm text-text-muted" />
+          </HintBox>
+        )}
         {label && <label className={labelClasses}>{label}</label>}
 
         <div

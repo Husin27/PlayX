@@ -8,6 +8,9 @@ import React, {
 import { UploadCloud, File, Trash2, LucideIcon } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
+import { Button } from "../general/button";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -26,6 +29,8 @@ export interface FileUploadProps extends Omit<
 > {
   label?: string;
   error?: string;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
   maxSizeInBytes?: number;
   acceptTypes?: string[];
   onChange?: (files: File[]) => void;
@@ -48,6 +53,8 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
     {
       label,
       error,
+      hint,
+      popupMenu,
       maxSizeInBytes = 10 * 1024 * 1024,
       acceptTypes = [],
       onChange,
@@ -204,7 +211,15 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
     }, [disabled]);
 
     return (
-      <div className={cn("w-full", className)}>
+      <div
+        className={cn("w-full", className)}
+        onContextMenu={(e) => popupMenu?.trigger(e)}
+      >
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span className="text-sm text-text-muted" />
+          </HintBox>
+        )}
         {label && (
           <label
             className={cn(
@@ -322,19 +337,12 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
                     <div className="flex items-center gap-1.5 shrink-0">
                       {limitedActionButtons.length > 0 &&
                         limitedActionButtons.map((action, index) => (
-                          <button
+                          <Button
                             key={index}
                             type="button"
-                            className={cn(
-                              "relative flex items-center justify-center",
-                              "w-8 h-8 rounded-md",
-                              "text-muted-foreground/60 hover:text-foreground",
-                              "bg-transparent hover:bg-accent",
-                              "transition-transform duration-100",
-                              "active:scale-95",
-                              "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/20 focus-visible:border-amber-500",
-                              "disabled:opacity-50 disabled:pointer-events-none",
-                            )}
+                            variant="ghost"
+                            size="icon"
+                            className="active:scale-95 transition-all duration-100"
                             aria-label={action.tooltipText}
                             disabled={disabled || action.disabled}
                             onClick={(e) => {
@@ -346,20 +354,13 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
                               className="w-4 h-4"
                               aria-hidden="true"
                             />
-                          </button>
+                          </Button>
                         ))}
-                      <button
+                      <Button
                         type="button"
-                        className={cn(
-                          "relative flex items-center justify-center",
-                          "w-8 h-8 rounded-md",
-                          "text-muted-foreground/60 hover:text-destructive",
-                          "bg-transparent hover:bg-destructive/10",
-                          "transition-transform duration-100",
-                          "active:scale-95",
-                          "focus:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2",
-                          "disabled:opacity-50 disabled:pointer-events-none",
-                        )}
+                        variant="ghost"
+                        size="icon"
+                        className="active:scale-95 transition-all duration-100"
                         aria-label="Remove file"
                         disabled={disabled}
                         onClick={(e) => {
@@ -368,7 +369,7 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
                         }}
                       >
                         <Trash2 className="w-4 h-4" aria-hidden="true" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
