@@ -1,6 +1,7 @@
 import React from "react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "./hint-box";
 
 // 🚀 LOCAL VANILLA CN UTILITY CORES
 export function cn(...inputs: ClassValue[]) {
@@ -9,13 +10,7 @@ export function cn(...inputs: ClassValue[]) {
 
 // 🚦 LOCAL TYPE ISOLATION GATEWAY
 export type StatusIndicatorVariant =
-  | "draft"
-  | "pending"
-  | "posted"
-  | "approved"
-  | "void"
-  | "destructive"
-  | "info";
+  "draft" | "pending" | "posted" | "approved" | "void" | "destructive" | "info";
 export type StatusIndicatorSize = "sm" | "md" | "lg";
 
 export interface StatusIndicatorProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -23,6 +18,7 @@ export interface StatusIndicatorProps extends React.HTMLAttributes<HTMLDivElemen
   size?: StatusIndicatorSize;
   hasPulse?: boolean;
   label: string;
+  hint?: string;
 }
 
 const variantStyles: Record<StatusIndicatorVariant, string> = {
@@ -71,6 +67,7 @@ export function StatusIndicator({
   size = "md",
   hasPulse = false,
   label,
+  hint,
   className,
   ...props
 }: StatusIndicatorProps) {
@@ -78,32 +75,39 @@ export function StatusIndicator({
   const variantClass = variantStyles[variant];
 
   return (
-    <div
-      className={cn(
-        "inline-flex items-center",
-        sizes.container,
-        sizes.gap,
-        variantClass,
-        "border",
-        "transition-colors duration-200 ease-out",
-        className,
+    <>
+      {hint && (
+        <HintBox content={hint} className="mb-1.5">
+          <span aria-hidden="true" style={{ display: "none" }} />
+        </HintBox>
       )}
-      {...props}
-    >
-      {hasPulse && (
-        <span
-          className={cn(
-            sizes.dot,
-            "rounded-full",
-            "bg-current",
-            pulseStyles,
-            "opacity-70",
-          )}
-          aria-hidden="true"
-        />
-      )}
-      <span className={cn(sizes.text, "whitespace-nowrap")}>{label}</span>
-    </div>
+      <div
+        className={cn(
+          "inline-flex items-center",
+          sizes.container,
+          sizes.gap,
+          variantClass,
+          "border",
+          "transition-colors duration-200 ease-out",
+          className,
+        )}
+        {...props}
+      >
+        {hasPulse && (
+          <span
+            className={cn(
+              sizes.dot,
+              "rounded-full",
+              "bg-current",
+              pulseStyles,
+              "opacity-70",
+            )}
+            aria-hidden="true"
+          />
+        )}
+        <span className={cn(sizes.text, "whitespace-nowrap")}>{label}</span>
+      </div>
+    </>
   );
 }
 

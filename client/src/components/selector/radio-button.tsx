@@ -12,13 +12,15 @@ import React, {
 import { Circle } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
 
-// 🚀 LOCAL VANILLA CN UTILITY CORES
+// ðŸš€ LOCAL VANILLA CN UTILITY CORES
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// 🚦 LOCAL TYPE ISOLATION GATEWAY
+// ðŸš¦ LOCAL TYPE ISOLATION GATEWAY
 export interface RadioOptionItemConfig {
   value: string;
   label: string;
@@ -35,6 +37,8 @@ export interface RadioGroupProps {
   error?: string;
   orientation?: "horizontal" | "vertical";
   className?: string;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
 }
 
 interface RadioGroupContextValue {
@@ -255,6 +259,8 @@ export function RadioGroup({
   error,
   orientation = "vertical",
   className,
+  hint,
+  popupMenu,
 }: RadioGroupProps) {
   const [focusedValue, setFocusedValue] = useState<string | null>(null);
   const optionRefs = useRef<
@@ -309,6 +315,11 @@ export function RadioGroup({
 
   return (
     <RadioGroupContext.Provider value={contextValue}>
+      {hint && (
+        <HintBox content={hint} className="mb-1.5">
+          <span className="sr-only">hint</span>
+        </HintBox>
+      )}
       <div
         className={groupClasses}
         role="radiogroup"
@@ -316,6 +327,7 @@ export function RadioGroup({
         aria-invalid={!!error}
         aria-disabled={disabled}
         aria-orientation={orientation}
+        onContextMenu={(e) => popupMenu?.trigger(e)}
       >
         {options.map((option) => (
           <RadioOption key={option.value} option={option} />

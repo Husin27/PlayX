@@ -1,6 +1,7 @@
 import React, { forwardRef } from "react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "../feedback/hint-box";
 
 // 🚀 LOCAL VANILLA CN UTILITY CORES
 export function cn(...inputs: ClassValue[]) {
@@ -14,11 +15,19 @@ export interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   value?: number;
   variant?: ProgressVariant;
   showLabel?: boolean;
+  hint?: string;
 }
 
 export const Progress = forwardRef<HTMLDivElement, ProgressProps>(
   (
-    { value = 0, variant = "brand", showLabel = false, className, ...props },
+    {
+      value = 0,
+      variant = "brand",
+      showLabel = false,
+      className,
+      hint,
+      ...props
+    },
     ref,
   ) => {
     const clampedValue = Math.max(0, Math.min(100, value));
@@ -45,39 +54,46 @@ export const Progress = forwardRef<HTMLDivElement, ProgressProps>(
     } as const satisfies Record<ProgressVariant, string>;
 
     return (
-      <div
-        ref={ref}
-        role="progressbar"
-        aria-valuenow={clampedValue}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        className={cn(
-          "relative w-full h-2 rounded-full overflow-hidden",
-          containerStyles[variant],
-          className,
+      <>
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span aria-hidden="true" style={{ display: "none" }} />
+          </HintBox>
         )}
-        {...props}
-      >
         <div
+          ref={ref}
+          role="progressbar"
+          aria-valuenow={clampedValue}
+          aria-valuemin={0}
+          aria-valuemax={100}
           className={cn(
-            "h-full rounded-full transition-all duration-500 ease-out",
-            variantStyles[variant],
+            "relative w-full h-2 rounded-full overflow-hidden",
+            containerStyles[variant],
+            className,
           )}
-          style={{ width: `${clampedValue}%` }}
-          aria-hidden="true"
-        />
-        {showLabel && (
-          <span
+          {...props}
+        >
+          <div
             className={cn(
-              "absolute right-0 top-1/2 -translate-y-1/2 pr-1.5 text-xs font-medium tabular-nums",
-              labelStyles[variant],
+              "h-full rounded-full transition-all duration-500 ease-out",
+              variantStyles[variant],
             )}
+            style={{ width: `${clampedValue}%` }}
             aria-hidden="true"
-          >
-            {clampedValue}%
-          </span>
-        )}
-      </div>
+          />
+          {showLabel && (
+            <span
+              className={cn(
+                "absolute right-0 top-1/2 -translate-y-1/2 pr-1.5 text-xs font-medium tabular-nums",
+                labelStyles[variant],
+              )}
+              aria-hidden="true"
+            >
+              {clampedValue}%
+            </span>
+          )}
+        </div>
+      </>
     );
   },
 );

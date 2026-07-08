@@ -10,13 +10,15 @@ import React, {
 import { X, Plus } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "../feedback/hint-box";
+import type { PopupMenuConfig } from "../feedback/popup-menu";
 
-// 🚀 LOCAL VANILLA CN UTILITY CORES
+// ðŸš€ LOCAL VANILLA CN UTILITY CORES
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// 🚦 LOCAL TYPE ISOLATION GATEWAY
+// ðŸš¦ LOCAL TYPE ISOLATION GATEWAY
 export interface TabsRootProps extends React.HTMLAttributes<HTMLDivElement> {
   defaultValue: string;
   value?: string;
@@ -24,6 +26,8 @@ export interface TabsRootProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   orientation?: "horizontal" | "vertical";
   activationMode?: "automatic" | "manual";
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
 }
 
 export interface TabsListProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -68,7 +72,7 @@ function useTabsContext() {
   return context;
 }
 
-// 🎯 TABS ROOT - State Management & Context Provider
+// ðŸŽ¯ TABS ROOT - State Management & Context Provider
 export const TabsRoot = React.forwardRef<HTMLDivElement, TabsRootProps>(
   (
     {
@@ -79,6 +83,8 @@ export const TabsRoot = React.forwardRef<HTMLDivElement, TabsRootProps>(
       orientation = "horizontal",
       activationMode = "automatic",
       className,
+      hint,
+      popupMenu,
       ...props
     },
     ref,
@@ -183,7 +189,13 @@ export const TabsRoot = React.forwardRef<HTMLDivElement, TabsRootProps>(
           className={cn("relative", className)}
           data-tabs-root
           {...props}
+          onContextMenu={(e) => popupMenu?.trigger(e)}
         >
+          {hint && (
+            <HintBox content={hint} className="mb-1.5">
+              <span className="sr-only">hint</span>
+            </HintBox>
+          )}
           {children}
           <div
             className={cn(
@@ -202,7 +214,7 @@ export const TabsRoot = React.forwardRef<HTMLDivElement, TabsRootProps>(
 
 TabsRoot.displayName = "TabsRoot";
 
-// 🎯 TABS LIST - Container for Triggers
+// ðŸŽ¯ TABS LIST - Container for Triggers
 export const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
   ({ children, className, showAddButton = false, onAddTab, ...props }, ref) => {
     const { orientation, activationMode, value, onValueChange, triggerRefs } =
@@ -321,7 +333,7 @@ export const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
 
 TabsList.displayName = "TabsList";
 
-// 🎯 TABS TRIGGER - Individual Tab Button
+// ðŸŽ¯ TABS TRIGGER - Individual Tab Button
 export const TabsTrigger = React.forwardRef<
   HTMLButtonElement,
   TabsTriggerProps
@@ -463,7 +475,7 @@ export const TabsTrigger = React.forwardRef<
 
 TabsTrigger.displayName = "TabsTrigger";
 
-// 🎯 TABS CONTENT - Tab Panel
+// ðŸŽ¯ TABS CONTENT - Tab Panel
 export const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(
   ({ value, children, forceMount = false, className, ...props }, ref) => {
     const { value: currentValue } = useTabsContext();
@@ -501,7 +513,7 @@ export const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(
 
 TabsContent.displayName = "TabsContent";
 
-// 🎯 COMPOUND COMPONENT EXPORTS
+// ðŸŽ¯ COMPOUND COMPONENT EXPORTS
 export const Tabs = Object.assign(TabsRoot, {
   List: TabsList,
   Trigger: TabsTrigger,

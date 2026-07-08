@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback } from "react";
 import { X, LucideIcon } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "../feedback/hint-box";
 
 // 🚀 LOCAL VANILLA CN UTILITY CORES
 export function cn(...inputs: ClassValue[]) {
@@ -35,6 +36,7 @@ export interface PopupFormProps {
     secondary?: PopupActionConfig;
   };
   children: React.ReactNode;
+  hint?: string;
 }
 
 export function PopupForm({
@@ -49,6 +51,7 @@ export function PopupForm({
   headerActions = [],
   footerActions,
   children,
+  hint,
 }: PopupFormProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -271,6 +274,11 @@ export function PopupForm({
       aria-labelledby="popup-form-title"
       aria-describedby={description ? "popup-form-description" : undefined}
     >
+      {hint && (
+        <HintBox content={hint} className="mb-1.5">
+          <span aria-hidden="true" style={{ display: "none" }} />
+        </HintBox>
+      )}
       <div
         ref={modalRef}
         tabIndex={-1}

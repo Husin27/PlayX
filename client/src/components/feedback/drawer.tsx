@@ -9,17 +9,21 @@ import React, {
 import { X } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "./hint-box";
+import type { PopupMenuConfig } from "./popup-menu";
 
-// 🚀 LOCAL VANILLA CN UTILITY CORES
+// ðŸš€ LOCAL VANILLA CN UTILITY CORES
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// 🚦 LOCAL TYPE ISOLATION GATEWAY
+// ðŸš¦ LOCAL TYPE ISOLATION GATEWAY
 export interface DrawerRootProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
 }
 
 export interface DrawerOverlayProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -39,6 +43,7 @@ interface DrawerContextValue {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   size: DrawerContentProps["size"];
+  popupMenu?: PopupMenuConfig;
 }
 
 const DrawerContext = createContext<DrawerContextValue | null>(null);
@@ -59,7 +64,13 @@ const SIZE_CLASSES = {
   full: "w-full max-w-[100vw]",
 } as const;
 
-export function DrawerRoot({ open, onOpenChange, children }: DrawerRootProps) {
+export function DrawerRoot({
+  open,
+  onOpenChange,
+  children,
+  hint,
+  popupMenu,
+}: DrawerRootProps) {
   const [size] = useState<DrawerContentProps["size"]>("md");
 
   const handleOpenChange = useCallback(
@@ -73,21 +84,29 @@ export function DrawerRoot({ open, onOpenChange, children }: DrawerRootProps) {
     open,
     onOpenChange: handleOpenChange,
     size,
+    popupMenu,
   };
 
   return (
     <DrawerContext.Provider value={value}>
-      {React.Children.map(children, (child) => {
-        if (!React.isValidElement(child)) return child;
-        if (child.type === DrawerContent) {
-          const childProps = child.props as DrawerContentProps;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return React.cloneElement(child as any, {
-            size: childProps.size || size,
-          });
-        }
-        return child;
-      })}
+      <div className="relative" onContextMenu={(e) => popupMenu?.trigger(e)}>
+        {React.Children.map(children, (child) => {
+          if (!React.isValidElement(child)) return child;
+          if (child.type === DrawerContent) {
+            const childProps = child.props as DrawerContentProps;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return React.cloneElement(child as any, {
+              size: childProps.size || size,
+            });
+          }
+          return child;
+        })}
+        {hint && (
+          <HintBox content={hint} className="mb-1.5">
+            <span className="sr-only">hint</span>
+          </HintBox>
+        )}
+      </div>
     </DrawerContext.Provider>
   );
 }
@@ -196,6 +215,9 @@ export function DrawerContent({
       aria-modal="true"
       aria-label="Drawer"
       {...props}
+      onContextMenu={() => {
+        // Allow context menu to bubble up to DrawerRoot for popupMenu handling
+      }}
     >
       {children}
     </div>

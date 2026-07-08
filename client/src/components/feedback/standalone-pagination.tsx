@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "../feedback/hint-box";
 
 // 🚀 LOCAL VANILLA CN UTILITY CORES
 export function cn(...inputs: ClassValue[]) {
@@ -65,6 +66,8 @@ export interface StandalonePaginationProps {
   size?: "sm" | "md" | "lg";
   /** Variant style */
   variant?: "default" | "outline" | "ghost";
+  /** Optional hint text to display below pagination */
+  hint?: string;
 }
 
 // 🎯 SIBLING WINDOW MATH ENGINE
@@ -179,6 +182,7 @@ export function StandalonePagination({
   disabled = false,
   size = "md",
   variant = "default",
+  hint,
 }: StandalonePaginationProps) {
   // Clamp current page
   const clampedPage = useMemoReact(
@@ -264,192 +268,199 @@ export function StandalonePagination({
   const activeVariantClass = ACTIVE_VARIANT_CLASSES[variant];
 
   return (
-    <nav
-      role="navigation"
-      aria-label={ariaLabel}
-      className={cn(
-        "flex items-center justify-center gap-1.5",
-        "font-medium",
-        className,
+    <>
+      {hint && (
+        <HintBox content={hint} className="mb-1.5">
+          <span aria-hidden="true" style={{ display: "none" }} />
+        </HintBox>
       )}
-    >
-      {/* First Page Button */}
-      {showFirstLast && clampedPage > 1 && (
-        <button
-          type="button"
-          onClick={() => handlePageClick(1)}
-          onKeyDown={(e) => handleKeyDown(e, 1)}
-          disabled={disabled || clampedPage === 1}
-          className={cn(
-            "inline-flex items-center justify-center",
-            "rounded-md border",
-            "font-medium transition-all duration-150 ease-out",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-            "active:scale-[0.98]",
-            sizeClass,
-            variantClass,
-            disabled && DISABLED_CLASSES,
-            disabledItemClassName,
-          )}
-          aria-label={labels.first?.ariaLabel ?? "Go to first page"}
-          title={labels.first?.label ?? "First page"}
-        >
-          <ChevronFirst
-            size={size === "sm" ? 14 : size === "md" ? 16 : 18}
-            strokeWidth={2.5}
-            aria-hidden="true"
-          />
-        </button>
-      )}
-
-      {/* Previous Page Button */}
-      {showPrevNext && clampedPage > 1 && (
-        <button
-          type="button"
-          onClick={() => handlePageClick(clampedPage - 1)}
-          onKeyDown={(e) => handleKeyDown(e, clampedPage - 1)}
-          disabled={disabled || clampedPage === 1}
-          className={cn(
-            "inline-flex items-center justify-center",
-            "rounded-md border",
-            "font-medium transition-all duration-150 ease-out",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-            "active:scale-[0.98]",
-            sizeClass,
-            variantClass,
-            disabled && DISABLED_CLASSES,
-            disabledItemClassName,
-          )}
-          aria-label={labels.previous?.ariaLabel ?? "Go to previous page"}
-          title={labels.previous?.label ?? "Previous page"}
-        >
-          <ChevronLeft
-            size={size === "sm" ? 14 : size === "md" ? 16 : 18}
-            strokeWidth={2.5}
-            aria-hidden="true"
-          />
-        </button>
-      )}
-
-      {/* Page Numbers & Ellipsis */}
-      <div
-        className="flex items-center gap-0.5"
-        role="group"
-        aria-label="Page numbers"
+      <nav
+        role="navigation"
+        aria-label={ariaLabel}
+        className={cn(
+          "flex items-center justify-center gap-1.5",
+          "font-medium",
+          className,
+        )}
       >
-        {paginationItems.map((item, index) => {
-          const isActive = item.isActive;
-          const isEllipsis = item.type === "ellipsis";
+        {/* First Page Button */}
+        {showFirstLast && clampedPage > 1 && (
+          <button
+            type="button"
+            onClick={() => handlePageClick(1)}
+            onKeyDown={(e) => handleKeyDown(e, 1)}
+            disabled={disabled || clampedPage === 1}
+            className={cn(
+              "inline-flex items-center justify-center",
+              "rounded-md border",
+              "font-medium transition-all duration-150 ease-out",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "active:scale-[0.98]",
+              sizeClass,
+              variantClass,
+              disabled && DISABLED_CLASSES,
+              disabledItemClassName,
+            )}
+            aria-label={labels.first?.ariaLabel ?? "Go to first page"}
+            title={labels.first?.label ?? "First page"}
+          >
+            <ChevronFirst
+              size={size === "sm" ? 14 : size === "md" ? 16 : 18}
+              strokeWidth={2.5}
+              aria-hidden="true"
+            />
+          </button>
+        )}
 
-          if (isEllipsis) {
+        {/* Previous Page Button */}
+        {showPrevNext && clampedPage > 1 && (
+          <button
+            type="button"
+            onClick={() => handlePageClick(clampedPage - 1)}
+            onKeyDown={(e) => handleKeyDown(e, clampedPage - 1)}
+            disabled={disabled || clampedPage === 1}
+            className={cn(
+              "inline-flex items-center justify-center",
+              "rounded-md border",
+              "font-medium transition-all duration-150 ease-out",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "active:scale-[0.98]",
+              sizeClass,
+              variantClass,
+              disabled && DISABLED_CLASSES,
+              disabledItemClassName,
+            )}
+            aria-label={labels.previous?.ariaLabel ?? "Go to previous page"}
+            title={labels.previous?.label ?? "Previous page"}
+          >
+            <ChevronLeft
+              size={size === "sm" ? 14 : size === "md" ? 16 : 18}
+              strokeWidth={2.5}
+              aria-hidden="true"
+            />
+          </button>
+        )}
+
+        {/* Page Numbers & Ellipsis */}
+        <div
+          className="flex items-center gap-0.5"
+          role="group"
+          aria-label="Page numbers"
+        >
+          {paginationItems.map((item, index) => {
+            const isActive = item.isActive;
+            const isEllipsis = item.type === "ellipsis";
+
+            if (isEllipsis) {
+              return (
+                <span
+                  key={`ellipsis-${index}`}
+                  className={cn(
+                    "inline-flex items-center justify-center",
+                    "text-muted-foreground",
+                    "select-none",
+                    itemSizeClass,
+                    itemClassName,
+                  )}
+                  aria-hidden="true"
+                >
+                  <MoreHorizontal
+                    size={size === "sm" ? 14 : size === "md" ? 16 : 18}
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
+                </span>
+              );
+            }
+
             return (
-              <span
-                key={`ellipsis-${index}`}
+              <button
+                key={`page-${item.page}`}
+                type="button"
+                onClick={() => item.page && handlePageClick(item.page)}
+                onKeyDown={(e) => handleKeyDown(e, item.page)}
+                disabled={disabled || isActive}
                 className={cn(
                   "inline-flex items-center justify-center",
-                  "text-muted-foreground",
-                  "select-none",
+                  "rounded-md border",
+                  "font-medium transition-all duration-150 ease-out",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  "active:scale-[0.98]",
                   itemSizeClass,
-                  itemClassName,
+                  isActive ? activeVariantClass : variantClass,
+                  isActive && "cursor-default",
+                  disabled && DISABLED_CLASSES,
+                  isActive ? activeItemClassName : itemClassName,
                 )}
-                aria-hidden="true"
+                aria-label={item.ariaLabel}
+                aria-current={isActive ? "page" : undefined}
+                tabIndex={isActive ? 0 : -1}
               >
-                <MoreHorizontal
-                  size={size === "sm" ? 14 : size === "md" ? 16 : 18}
-                  strokeWidth={2}
-                  aria-hidden="true"
-                />
-              </span>
+                {labels.page ? labels.page(item.page!) : item.label}
+              </button>
             );
-          }
+          })}
+        </div>
 
-          return (
-            <button
-              key={`page-${item.page}`}
-              type="button"
-              onClick={() => item.page && handlePageClick(item.page)}
-              onKeyDown={(e) => handleKeyDown(e, item.page)}
-              disabled={disabled || isActive}
-              className={cn(
-                "inline-flex items-center justify-center",
-                "rounded-md border",
-                "font-medium transition-all duration-150 ease-out",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                "active:scale-[0.98]",
-                itemSizeClass,
-                isActive ? activeVariantClass : variantClass,
-                isActive && "cursor-default",
-                disabled && DISABLED_CLASSES,
-                isActive ? activeItemClassName : itemClassName,
-              )}
-              aria-label={item.ariaLabel}
-              aria-current={isActive ? "page" : undefined}
-              tabIndex={isActive ? 0 : -1}
-            >
-              {labels.page ? labels.page(item.page!) : item.label}
-            </button>
-          );
-        })}
-      </div>
+        {/* Next Page Button */}
+        {showPrevNext && clampedPage < totalPages && (
+          <button
+            type="button"
+            onClick={() => handlePageClick(clampedPage + 1)}
+            onKeyDown={(e) => handleKeyDown(e, clampedPage + 1)}
+            disabled={disabled || clampedPage === totalPages}
+            className={cn(
+              "inline-flex items-center justify-center",
+              "rounded-md border",
+              "font-medium transition-all duration-150 ease-out",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "active:scale-[0.98]",
+              sizeClass,
+              variantClass,
+              disabled && DISABLED_CLASSES,
+              disabledItemClassName,
+            )}
+            aria-label={labels.next?.ariaLabel ?? "Go to next page"}
+            title={labels.next?.label ?? "Next page"}
+          >
+            <ChevronRight
+              size={size === "sm" ? 14 : size === "md" ? 16 : 18}
+              strokeWidth={2.5}
+              aria-hidden="true"
+            />
+          </button>
+        )}
 
-      {/* Next Page Button */}
-      {showPrevNext && clampedPage < totalPages && (
-        <button
-          type="button"
-          onClick={() => handlePageClick(clampedPage + 1)}
-          onKeyDown={(e) => handleKeyDown(e, clampedPage + 1)}
-          disabled={disabled || clampedPage === totalPages}
-          className={cn(
-            "inline-flex items-center justify-center",
-            "rounded-md border",
-            "font-medium transition-all duration-150 ease-out",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-            "active:scale-[0.98]",
-            sizeClass,
-            variantClass,
-            disabled && DISABLED_CLASSES,
-            disabledItemClassName,
-          )}
-          aria-label={labels.next?.ariaLabel ?? "Go to next page"}
-          title={labels.next?.label ?? "Next page"}
-        >
-          <ChevronRight
-            size={size === "sm" ? 14 : size === "md" ? 16 : 18}
-            strokeWidth={2.5}
-            aria-hidden="true"
-          />
-        </button>
-      )}
-
-      {/* Last Page Button */}
-      {showFirstLast && clampedPage < totalPages && (
-        <button
-          type="button"
-          onClick={() => handlePageClick(totalPages)}
-          onKeyDown={(e) => handleKeyDown(e, totalPages)}
-          disabled={disabled || clampedPage === totalPages}
-          className={cn(
-            "inline-flex items-center justify-center",
-            "rounded-md border",
-            "font-medium transition-all duration-150 ease-out",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-            "active:scale-[0.98]",
-            sizeClass,
-            variantClass,
-            disabled && DISABLED_CLASSES,
-            disabledItemClassName,
-          )}
-          aria-label={labels.last?.ariaLabel ?? "Go to last page"}
-          title={labels.last?.label ?? "Last page"}
-        >
-          <ChevronLast
-            size={size === "sm" ? 14 : size === "md" ? 16 : 18}
-            strokeWidth={2.5}
-            aria-hidden="true"
-          />
-        </button>
-      )}
-    </nav>
+        {/* Last Page Button */}
+        {showFirstLast && clampedPage < totalPages && (
+          <button
+            type="button"
+            onClick={() => handlePageClick(totalPages)}
+            onKeyDown={(e) => handleKeyDown(e, totalPages)}
+            disabled={disabled || clampedPage === totalPages}
+            className={cn(
+              "inline-flex items-center justify-center",
+              "rounded-md border",
+              "font-medium transition-all duration-150 ease-out",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "active:scale-[0.98]",
+              sizeClass,
+              variantClass,
+              disabled && DISABLED_CLASSES,
+              disabledItemClassName,
+            )}
+            aria-label={labels.last?.ariaLabel ?? "Go to last page"}
+            title={labels.last?.label ?? "Last page"}
+          >
+            <ChevronLast
+              size={size === "sm" ? 14 : size === "md" ? 16 : 18}
+              strokeWidth={2.5}
+              aria-hidden="true"
+            />
+          </button>
+        )}
+      </nav>
+    </>
   );
 }
 

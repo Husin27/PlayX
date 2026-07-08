@@ -6,9 +6,24 @@ import React, {
   useImperativeHandle,
   useRef,
 } from "react";
-import { ZoomIn, ZoomOut, RotateCw, RefreshCw } from "lucide-react";
+import {
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  RefreshCw,
+  MoreHorizontal,
+  Copy,
+  Download,
+  ExternalLink,
+} from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "./hint-box";
+import {
+  PopupMenu,
+  type PopupMenuConfig,
+  type PopupMenuItemConfig,
+} from "./popup-menu";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -18,6 +33,8 @@ export interface ImageViewerProps extends React.HTMLAttributes<HTMLDivElement> {
   src?: string;
   alt?: string;
   onScaleChange?: (scale: number, rotate: number) => void;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
 }
 
 export interface ImageViewerRef {
@@ -39,6 +56,8 @@ export const ImageViewer = forwardRef<ImageViewerRef, ImageViewerProps>(
       onScaleChange,
       className,
       style,
+      hint,
+      popupMenu,
       ...props
     },
     ref,
@@ -137,6 +156,30 @@ export const ImageViewer = forwardRef<ImageViewerRef, ImageViewerProps>(
       [handleScaleChange, scale],
     );
 
+    const handleCopyImage = useCallback(() => {
+      if (src) {
+        navigator.clipboard.writeText(src);
+      }
+    }, [src]);
+
+    const handleDownloadImage = useCallback(() => {
+      if (src) {
+        const link = document.createElement("a");
+        link.href = src;
+        link.download = alt || "image";
+        link.target = "_blank";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }, [src, alt]);
+
+    const handleOpenInNewTab = useCallback(() => {
+      if (src) {
+        window.open(src, "_blank", "noopener,noreferrer");
+      }
+    }, [src]);
+
     if (!src) {
       return (
         <div
@@ -151,7 +194,13 @@ export const ImageViewer = forwardRef<ImageViewerRef, ImageViewerProps>(
           )}
           style={style}
           {...props}
+          onContextMenu={(e) => popupMenu?.trigger(e)}
         >
+          {hint && (
+            <HintBox content={hint} className="m-3 mb-0">
+              <span className="sr-only">hint</span>
+            </HintBox>
+          )}
           <div className="text-center p-8">
             <RefreshCw
               className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3 animate-spin"
@@ -162,6 +211,36 @@ export const ImageViewer = forwardRef<ImageViewerRef, ImageViewerProps>(
         </div>
       );
     }
+
+    const menuItems: PopupMenuItemConfig[] = [
+      {
+        id: "copy-link",
+        label: "Copy Link",
+        icon: Copy,
+        onClick: handleCopyImage,
+        disabled: !src,
+      },
+      {
+        id: "download",
+        label: "Download",
+        icon: Download,
+        onClick: handleDownloadImage,
+        disabled: !src,
+      },
+      {
+        id: "open-new-tab",
+        label: "Open in New Tab",
+        icon: ExternalLink,
+        onClick: handleOpenInNewTab,
+        disabled: !src,
+      },
+      {
+        id: "reset",
+        label: "Reset View",
+        icon: RefreshCw,
+        onClick: reset,
+      },
+    ];
 
     return (
       <div
@@ -177,7 +256,13 @@ export const ImageViewer = forwardRef<ImageViewerRef, ImageViewerProps>(
         style={style}
         onWheel={handleWheel}
         {...props}
+        onContextMenu={(e) => popupMenu?.trigger(e)}
       >
+        {hint && (
+          <HintBox content={hint} className="m-3 mb-0">
+            <span className="sr-only">hint</span>
+          </HintBox>
+        )}
         <div
           className={cn(
             "flex items-center justify-between p-3",
@@ -273,6 +358,28 @@ export const ImageViewer = forwardRef<ImageViewerRef, ImageViewerProps>(
             >
               <RotateCw className="w-4 h-4" aria-hidden="true" />
             </button>
+            <PopupMenu
+              items={menuItems}
+              trigger={
+                <button
+                  type="button"
+                  className={cn(
+                    "relative flex items-center justify-center",
+                    "w-8 h-8 rounded-md",
+                    "text-muted-foreground/60 hover:text-foreground",
+                    "bg-transparent hover:bg-accent",
+                    "transition-transform duration-100",
+                    "active:scale-95",
+                    "focus-visible:outline-none",
+                    "focus-visible:ring-2 focus-visible:ring-amber-500/20 focus-visible:border-amber-500",
+                  )}
+                  aria-label="More options"
+                >
+                  <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
+                </button>
+              }
+              triggerType="click"
+            />
           </div>
         </div>
         <div

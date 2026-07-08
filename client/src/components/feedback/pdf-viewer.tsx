@@ -6,9 +6,21 @@ import React, {
   useCallback,
   useImperativeHandle,
 } from "react";
-import { FileText, ShieldAlert, RefreshCw, ExternalLink } from "lucide-react";
+import {
+  FileText,
+  ShieldAlert,
+  RefreshCw,
+  ExternalLink,
+  MoreHorizontal,
+} from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { HintBox } from "./hint-box";
+import {
+  PopupMenu,
+  type PopupMenuConfig,
+  type PopupMenuItemConfig,
+} from "./popup-menu";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -19,6 +31,8 @@ export interface PdfViewerProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;
   fallbackText?: string;
   height?: string | number;
+  hint?: string;
+  popupMenu?: PopupMenuConfig;
 }
 
 export const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
@@ -30,6 +44,8 @@ export const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
       height = "600px",
       className,
       style,
+      hint,
+      popupMenu,
       ...props
     },
     ref,
@@ -79,6 +95,34 @@ export const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
       ...style,
     };
 
+    const menuItems: PopupMenuItemConfig[] = [
+      {
+        id: "open-new-tab",
+        label: "Open in New Tab",
+        icon: ExternalLink,
+        onClick: handleOpenInNewTab,
+        disabled: !src,
+      },
+      {
+        id: "retry",
+        label: "Retry",
+        icon: RefreshCw,
+        onClick: handleRetry,
+        disabled: !hasError,
+      },
+      {
+        id: "copy-link",
+        label: "Copy Link",
+        icon: ExternalLink,
+        onClick: () => {
+          if (src) {
+            navigator.clipboard.writeText(src);
+          }
+        },
+        disabled: !src,
+      },
+    ];
+
     return (
       <div
         ref={containerRef}
@@ -93,7 +137,13 @@ export const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
         )}
         style={containerStyle}
         {...props}
+        onContextMenu={(e) => popupMenu?.trigger(e)}
       >
+        {hint && (
+          <HintBox content={hint} className="m-3 mb-0">
+            <span className="sr-only">hint</span>
+          </HintBox>
+        )}
         <div
           className={cn(
             "flex items-center justify-between p-3",
@@ -139,6 +189,28 @@ export const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
                 <span>Failed to load</span>
               </div>
             )}
+            <PopupMenu
+              items={menuItems}
+              trigger={
+                <button
+                  type="button"
+                  className={cn(
+                    "relative flex items-center justify-center",
+                    "w-8 h-8 rounded-md",
+                    "text-muted-foreground/60 hover:text-foreground",
+                    "bg-transparent hover:bg-accent",
+                    "transition-transform duration-100",
+                    "active:scale-95",
+                    "focus-visible:outline-none",
+                    "focus-visible:ring-2 focus-visible:ring-amber-500/20 focus-visible:border-amber-500",
+                  )}
+                  aria-label="More options"
+                >
+                  <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
+                </button>
+              }
+              triggerType="click"
+            />
             <button
               type="button"
               onClick={handleOpenInNewTab}
