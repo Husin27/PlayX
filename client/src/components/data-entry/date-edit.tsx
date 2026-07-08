@@ -5,16 +5,17 @@ import React, {
   useState,
   useEffect,
 } from "react";
-import { LucideIcon } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { LucideIcon, Calendar } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "../general/button";
 import { HintBox } from "../feedback/hint-box";
 import type { PopupMenuConfig } from "../feedback/popup-menu";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 export interface DateEditInnerIconConfig {
   icon: LucideIcon;
@@ -100,6 +101,8 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
     const hasError = Boolean(error);
     const [displayValue, setDisplayValue] = useState<string>("");
     const [isFocused, setIsFocused] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 
     const handleRef = useCallback(
       (node: HTMLInputElement | null) => {
@@ -125,20 +128,12 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
       if (initialValue) {
         const parsed = parseDateFromDb(initialValue, dbFormat);
         setDisplayValue(parsed);
+        setSelectedDate(new Date(parsed));
       } else {
         setDisplayValue("");
+        setSelectedDate(undefined);
       }
     }, [value, defaultValue, dbFormat]);
-
-    const handleChange = useCallback(
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newValue = e.target.value;
-        setDisplayValue(newValue);
-        const dbValue = formatDateForDb(newValue, dbFormat);
-        onChange?.(newValue, dbValue);
-      },
-      [dbFormat, onChange],
-    );
 
     const handleBlur = useCallback(
       (e: React.FocusEvent<HTMLInputElement>) => {
@@ -151,6 +146,37 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
     const handleFocus = useCallback(() => {
       setIsFocused(true);
     }, []);
+
+    const handleCalendarSelect = useCallback(
+      (date: Date | undefined) => {
+        if (date) {
+          const formatted = date.toISOString().split("T")[0];
+          setDisplayValue(formatted);
+          setSelectedDate(date);
+          const dbValue = formatDateForDb(formatted, dbFormat);
+          onChange?.(formatted, dbValue);
+        } else {
+          setDisplayValue("");
+          setSelectedDate(undefined);
+          onChange?.("", "");
+        }
+        setIsOpen(false);
+        inputRef.current?.focus();
+      },
+      [dbFormat, onChange],
+    );
+
+    const handleKeyDown = useCallback(
+      (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setIsOpen(true);
+        } else if (e.key === "Escape") {
+          setIsOpen(false);
+        }
+      },
+      [],
+    );
 
     const limitedInnerIcons = innerIcons.slice(0, 4);
     const limitedActionButtons = actionButtons.slice(0, 4);
@@ -181,61 +207,83 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
           </label>
         )}
         <div className="flex items-center w-full gap-2">
-          <div
-            className={cn(
-              "relative flex items-center flex-1 min-w-0",
-              "bg-card/90 backdrop-blur-[var(--backdrop-blur)]",
-              "border-[color-mix(in_oklch,var(--color-border)_60%,transparent)]",
-              "rounded-surface",
-              "text-text-main placeholder:text-muted-foreground/60",
-              "focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 focus-within:bg-amber-500/5",
-              "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
-              "transition-all duration-200 ease-out",
-              hasError &&
-                "border-destructive/50 focus-within:ring-destructive/50 focus-within:border-destructive/50",
-              disabled && "bg-muted/50",
-              isFocused && "ring-2 ring-amber-500/20 border-amber-500",
-            )}
-          >
-            <input
-              ref={handleRef}
-              type="date"
-              className={cn(
-                "flex-1 bg-transparent border-none outline-none",
-                "px-4 py-2.5",
-                "text-text-main placeholder:text-muted-foreground/60",
-                "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
-                "w-full min-w-0",
-                limitedInnerIcons.length > 0 ? "pr-12" : "pr-4",
-              )}
-              disabled={disabled}
-              required={required}
-              placeholder={placeholder}
-              value={displayValue}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              onFocus={handleFocus}
-              {...props}
-            />
-            {limitedInnerIcons.length > 0 && (
-              <div className="absolute right-3 flex items-center gap-1">
-                {limitedInnerIcons.map((iconConfig, index) => (
-                  <span
-                    key={index}
-                    className={cn(
-                      "flex items-center justify-center",
-                      "w-5 h-5",
-                      "text-muted-foreground/60",
-                      iconConfig.className,
-                    )}
+          <Popover open={isOpen} onOpenChange={setIsOpen}>
+            <PopoverTrigger asChild>
+              <div
+                className={cn(
+                  "relative flex items-center flex-1 min-w-0",
+                  "bg-card/90 backdrop-blur-[var(--backdrop-blur)]",
+                  "border-[color-mix(in_oklch,var(--color-border)_60%,transparent)]",
+                  "rounded-surface",
+                  "text-text-main placeholder:text-muted-foreground/60",
+                  "focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 focus-within:bg-amber-500/5",
+                  "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
+                  "transition-all duration-200 ease-out",
+                  hasError &&
+                    "border-destructive/50 focus-within:ring-destructive/50 focus-within:border-destructive/50",
+                  disabled && "bg-muted/50",
+                  isFocused && "ring-2 ring-amber-500/20 border-amber-500",
+                )}
+              >
+                <input
+                  ref={handleRef}
+                  type="text"
+                  readOnly
+                  className={cn(
+                    "flex-1 bg-transparent border-none outline-none",
+                    "px-4 py-2.5",
+                    "text-text-main placeholder:text-muted-foreground/60",
+                    "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
+                    "w-full min-w-0",
+                    limitedInnerIcons.length > 0 ? "pr-12" : "pr-12",
+                  )}
+                  disabled={disabled}
+                  required={required}
+                  placeholder={placeholder}
+                  value={displayValue}
+                  onBlur={handleBlur}
+                  onFocus={handleFocus}
+                  onKeyDown={handleKeyDown}
+                  {...props}
+                />
+                <div className="absolute right-3 flex items-center gap-1">
+                  <Calendar
+                    className="w-4 h-4 text-muted-foreground/60"
                     aria-hidden="true"
-                  >
-                    <iconConfig.icon className="w-4 h-4" aria-hidden="true" />
-                  </span>
-                ))}
+                  />
+                  {limitedInnerIcons.length > 0 && (
+                    <>
+                      {limitedInnerIcons.map((iconConfig, index) => (
+                        <span
+                          key={index}
+                          className={cn(
+                            "flex items-center justify-center",
+                            "w-5 h-5",
+                            "text-muted-foreground/60",
+                            iconConfig.className,
+                          )}
+                          aria-hidden="true"
+                        >
+                          <iconConfig.icon
+                            className="w-4 h-4"
+                            aria-hidden="true"
+                          />
+                        </span>
+                      ))}
+                    </>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start" sideOffset={5}>
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleCalendarSelect}
+                className="bg-popover border border-[color-mix(in_oklch,var(--color-border)_40%,transparent)] rounded-lg shadow-xl"
+              />
+            </PopoverContent>
+          </Popover>
           {limitedActionButtons.length > 0 && (
             <div className="flex items-center gap-1.5 shrink-0">
               {limitedActionButtons.map((action, index) => (

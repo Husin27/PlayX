@@ -1,20 +1,23 @@
 import React, {
   forwardRef,
   useImperativeHandle,
-  useRef,
   useState,
   useEffect,
 } from "react";
-import { Bold, Italic, Underline, List, LucideIcon } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import {
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
+  List,
+  LucideIcon,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { HintBox } from "../feedback/hint-box";
 import type { PopupMenuConfig } from "../feedback/popup-menu";
 import { Button } from "../general/button";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import UnderlineExtension from "@tiptap/extension-underline";
 
 export interface HtmlMemoActionConfig {
   icon: LucideIcon;
@@ -60,71 +63,91 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
     },
     ref,
   ) => {
-    const editorRef = useRef<HTMLDivElement>(null);
-    const toolbarRef = useRef<HTMLDivElement>(null);
-    const [htmlContent, setHtmlContent] = useState<string>(defaultValue);
     const [isFocused, setIsFocused] = useState(false);
     const hasError = Boolean(error);
 
+    const editor = useEditor({
+      extensions: [
+        StarterKit.configure({
+          heading: false,
+          codeBlock: false,
+          blockquote: false,
+          horizontalRule: false,
+        }),
+        UnderlineExtension,
+      ],
+      content: defaultValue,
+      editable: !disabled,
+      immediatelyRender: false,
+      onUpdate: ({ editor }) => {
+        onChange?.(editor.getHTML());
+      },
+      onFocus: () => setIsFocused(true),
+      onBlur: () => setIsFocused(false),
+      editorProps: {
+        attributes: {
+          class: cn(
+            "prose prose-sm max-w-none focus:outline-none",
+            "min-h-[120px] p-4",
+            "text-text-main placeholder:text-muted-foreground/60",
+            disabled && "opacity-50 pointer-events-none cursor-not-allowed",
+            hasError && "border-destructive/50",
+          ),
+        },
+      },
+    });
+
     useImperativeHandle(ref, () => ({
-      getHtml: () => htmlContent,
+      getHtml: () => editor?.getHTML() ?? "",
       setHtml: (html: string) => {
-        setHtmlContent(html);
-        if (editorRef.current) {
-          editorRef.current.innerHTML = html;
-        }
+        editor?.commands.setContent(html);
         onChange?.(html);
       },
       focus: () => {
-        editorRef.current?.focus();
+        editor?.commands.focus();
       },
     }));
 
     useEffect(() => {
-      if (editorRef.current && editorRef.current.innerHTML !== htmlContent) {
-        editorRef.current.innerHTML = htmlContent;
+      if (editor && defaultValue !== editor.getHTML()) {
+        const { from, to } = editor.state.selection;
+        editor.commands.setContent(defaultValue, {
+          parseOptions: { preserveWhitespace: true },
+        });
+        editor.commands.setTextSelection({ from, to });
       }
-    }, [htmlContent]);
-
-    const handleInput = () => {
-      if (editorRef.current) {
-        const html = editorRef.current.innerHTML;
-        setHtmlContent(html);
-        onChange?.(html);
-      }
-    };
-
-    const handleFocus = () => setIsFocused(true);
-    const handleBlur = () => setIsFocused(false);
-
-    const executeCommand = (command: string, value?: string) => {
-      document.execCommand(command, false, value);
-      editorRef.current?.focus();
-      handleInput();
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "b") {
-        e.preventDefault();
-        executeCommand("bold");
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "i") {
-        e.preventDefault();
-        executeCommand("italic");
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "u") {
-        e.preventDefault();
-        executeCommand("underline");
-      }
-    };
+    }, [defaultValue, editor]);
 
     const limitedActionIcons = actionIcons.slice(0, 4);
 
+    const isActive = (mark: string) => editor?.isActive(mark) ?? false;
+    const isActiveNode = (node: string) => editor?.isActive(node) ?? false;
+
     const toolbarButtons = [
-      { icon: Bold, command: "bold", tooltip: "Bold (Ctrl+B)" },
-      { icon: Italic, command: "italic", tooltip: "Italic (Ctrl+I)" },
-      { icon: Underline, command: "underline", tooltip: "Underline (Ctrl+U)" },
-      { icon: List, command: "insertUnorderedList", tooltip: "Bullet List" },
+      {
+        icon: Bold,
+        isActive: () => isActive("bold"),
+        onClick: () => editor?.chain().focus().toggleBold().run(),
+        tooltip: "Bold (Ctrl+B)",
+      },
+      {
+        icon: Italic,
+        isActive: () => isActive("italic"),
+        onClick: () => editor?.chain().focus().toggleItalic().run(),
+        tooltip: "Italic (Ctrl+I)",
+      },
+      {
+        icon: UnderlineIcon,
+        isActive: () => isActive("underline"),
+        onClick: () => editor?.chain().focus().toggleUnderline().run(),
+        tooltip: "Underline (Ctrl+U)",
+      },
+      {
+        icon: List,
+        isActive: () => isActiveNode("bulletList"),
+        onClick: () => editor?.chain().focus().toggleBulletList().run(),
+        tooltip: "Bullet List",
+      },
     ];
 
     return (
@@ -155,7 +178,6 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
         )}
         <div className="relative">
           <div
-            ref={toolbarRef}
             className={cn(
               "flex items-center gap-1 p-2",
               "bg-card/90 backdrop-blur-[var(--backdrop-blur)]",
@@ -172,26 +194,28 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="active:scale-95 transition-all duration-100"
+                className={cn(
+                  "active:scale-95 transition-all duration-100",
+                  btn.isActive() &&
+                    "bg-amber-500/20 text-amber-600 dark:text-amber-400",
+                )}
                 aria-label={btn.tooltip}
-                disabled={disabled}
-                onClick={() => executeCommand(btn.command)}
+                aria-pressed={btn.isActive()}
+                disabled={disabled || !editor}
+                onClick={btn.onClick}
               >
                 <btn.icon className="w-4 h-4" aria-hidden="true" />
               </Button>
             ))}
           </div>
           <div
-            ref={editorRef}
             className={cn(
               "w-full bg-card/90 backdrop-blur-[var(--backdrop-blur)]",
               "border-[color-mix(in_oklch,var(--color-border)_60%,transparent)]",
               "rounded-b-surface",
-              "text-text-main placeholder:text-muted-foreground/60",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
               "transition-all duration-200 ease-out",
-              "px-4 py-3",
               "min-h-[120px]",
               "outline-none",
               hasError &&
@@ -200,18 +224,14 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
               isFocused &&
                 "ring-2 ring-ring ring-offset-2 ring-offset-background",
             )}
-            contentEditable={!disabled}
-            suppressContentEditableWarning={true}
-            onInput={handleInput}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
             role="textbox"
             aria-multiline="true"
             aria-label={label}
             aria-invalid={hasError}
             aria-describedby={error ? "html-memo-error" : undefined}
-          />
+          >
+            {editor && <EditorContent editor={editor} />}
+          </div>
           {limitedActionIcons.length > 0 && (
             <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
               {limitedActionIcons.map((action, index) => (
@@ -223,7 +243,7 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
                   className="active:scale-95 transition-all duration-100"
                   aria-label={action.tooltipText}
                   disabled={disabled}
-                  onClick={() => action.onClick(htmlContent)}
+                  onClick={() => action.onClick(editor?.getHTML() ?? "")}
                 >
                   <action.icon className="w-4 h-4" aria-hidden="true" />
                 </Button>

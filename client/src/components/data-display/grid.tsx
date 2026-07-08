@@ -6,9 +6,8 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // 🔴 THE SACRED OFFICIAL TANSTACK CORE & VIRTUAL IMPORTERS SECURED!
 import {
@@ -33,10 +32,6 @@ import { ComboBox } from "../selector/combo-box";
 import { HintBox } from "../feedback/hint-box";
 import { StandalonePagination } from "../feedback/standalone-pagination";
 import type { PopupMenuConfig } from "../feedback/popup-menu";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export interface GridColumnLayout {
   key: string;
@@ -241,6 +236,28 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
       overscan: 5,
     });
 
+    // Debounce filter inputs for TanStack table (300ms delay)
+    useEffect(() => {
+      const handlers: Record<string, ReturnType<typeof setTimeout>> = {};
+      Object.entries(filterInputs).forEach(([key, value]) => {
+        handlers[key] = setTimeout(() => {
+          table.setColumnFilters((prev) => {
+            const existing = prev.find((f) => f.id === key);
+            if (value === "") {
+              return prev.filter((f) => f.id !== key);
+            }
+            if (existing) {
+              return prev.map((f) => (f.id === key ? { ...f, value } : f));
+            }
+            return [...prev, { id: key, value }];
+          });
+        }, 300);
+      });
+      return () => {
+        Object.values(handlers).forEach((handler) => clearTimeout(handler));
+      };
+    }, [filterInputs, table]);
+
     const handleEditChange = useCallback((newValue: unknown) => {
       setEditValue(newValue);
     }, []);
@@ -329,18 +346,8 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
     const handleFilterChange = useCallback(
       (columnKey: string, value: string) => {
         setFilterInputs((prev) => ({ ...prev, [columnKey]: value }));
-        table.setColumnFilters((prev) => {
-          const existing = prev.find((f) => f.id === columnKey);
-          if (value === "") {
-            return prev.filter((f) => f.id !== columnKey);
-          }
-          if (existing) {
-            return prev.map((f) => (f.id === columnKey ? { ...f, value } : f));
-          }
-          return [...prev, { id: columnKey, value }];
-        });
       },
-      [table],
+      [],
     );
 
     const handleColumnResizeStart = useCallback(

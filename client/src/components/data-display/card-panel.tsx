@@ -1,11 +1,5 @@
 import React, { forwardRef } from "react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-// 🚀 LOCAL VANILLA CN UTILITY CORES
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from "@/lib/utils";
 
 // 🚦 LOCAL TYPE ISOLATION GATEWAY
 export interface CardPanelProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -20,9 +14,10 @@ export type CardPanelFooterProps = React.HTMLAttributes<HTMLDivElement>;
 
 // 🎨 BASE CONTAINER STYLES - Premium Surface v2.8 Glassmorphism
 const containerBaseStyles =
-  "bg-card/90 backdrop-blur-[var(--backdrop-blur)] border border-[color-mix(in_oklch,var(--color-border)_40%,transparent)] rounded-[var(--radius-surface,12px)] transition-all duration-200 ease-out";
+  "bg-card/90 backdrop-blur-[var(--backdrop-blur)] border border-[color-mix(in_oklch,var(--color-border)_40%,transparent)] rounded-[var(--radius-surface,12px)] transition-all duration-300 ease-out will-change-[box-shadow,border-color]";
 
-const hoverableStyles = "hover:scale-[1.01] hover:shadow-lg";
+const hoverableStyles =
+  "hover:shadow-xl hover:border-[color-mix(in_oklch,var(--color-brand-primary)_40%,transparent)]";
 
 const headerBaseStyles =
   "flex items-center justify-between px-6 py-4 border-b border-[color-mix(in_oklch,var(--color-border)_40%,transparent)]";
