@@ -16,18 +16,13 @@ import {
   Download,
   ExternalLink,
 } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn } from "@/lib/utils";
 import { HintBox } from "./hint-box";
 import {
   PopupMenu,
   type PopupMenuConfig,
   type PopupMenuItemConfig,
 } from "./popup-menu";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export interface ImageViewerProps extends React.HTMLAttributes<HTMLDivElement> {
   src?: string;

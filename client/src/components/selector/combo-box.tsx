@@ -13,8 +13,7 @@ import {
   Search,
   MoreHorizontal,
 } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn } from "@/lib/utils";
 import { Thumbnail } from "@/components/general/thumbnail";
 import {
   CUSTOM_DROPDOWN_CONFIGS,
@@ -23,10 +22,7 @@ import {
 import { Button } from "../general/button";
 import { HintBox } from "../feedback/hint-box";
 import type { PopupMenuConfig } from "../feedback/popup-menu";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { THEME_CONFIG } from "@/config/theme-constants";
 
 export interface ComboBoxActionButtonConfig {
   icon: React.ReactNode;
@@ -104,7 +100,7 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
       placeholder = "Select an option...",
       disabled = false,
       required = false,
-      maxDropdownHeight = 320,
+      maxDropdownHeight = THEME_CONFIG.layout.dropdownMaxHeight,
       searchable = true,
       clearable = true,
       maxActionButtons = 4,
@@ -435,13 +431,13 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                 "absolute z-50 w-full mt-1.5",
                 "bg-card/95 backdrop-blur-[var(--backdrop-blur)] border border-[color-mix(in_oklch,var(--color-border)_60%,transparent)]",
                 "rounded-surface shadow-lg",
-                "max-h-[320px] overflow-auto",
+                "overflow-auto",
                 "transition-all duration-150 ease-out",
                 isOpen
                   ? "opacity-100 scale-100 translate-y-0"
                   : "opacity-0 scale-95 -translate-y-1 pointer-events-none",
               )}
-              style={{ maxHeight: maxDropdownHeight }}
+              style={{ maxHeight: THEME_CONFIG.layout.dropdownMaxHeight }}
               role="listbox"
               aria-label="Options"
             >

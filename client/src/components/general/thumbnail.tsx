@@ -1,12 +1,6 @@
 import React, { forwardRef, useState } from "react";
 import { FileText, ImageIcon, AlertCircle } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-// 🚀 LOCAL VANILLA CN UTILITY CORES
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from "@/lib/utils";
 
 // 🚦 LOCAL TYPE ISOLATION GATEWAY
 export interface ThumbnailProps extends React.HTMLAttributes<HTMLDivElement> {

@@ -6,15 +6,10 @@ import React, {
   useImperativeHandle,
 } from "react";
 import { UploadCloud, File, Trash2, LucideIcon } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn } from "@/lib/utils";
 import { HintBox } from "../feedback/hint-box";
 import type { PopupMenuConfig } from "../feedback/popup-menu";
 import { Button } from "../general/button";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export interface FileUploadActionButtonConfig {
   icon: LucideIcon;

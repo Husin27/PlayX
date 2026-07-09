@@ -1,14 +1,9 @@
 import React, { forwardRef, useEffect, useRef, useCallback } from "react";
 import { LucideIcon } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn } from "@/lib/utils";
 import { HintBox } from "../feedback/hint-box";
 import type { PopupMenuConfig } from "../feedback/popup-menu";
 import { Button } from "../general/button";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export interface MemoBoxActionConfig {
   icon: LucideIcon;

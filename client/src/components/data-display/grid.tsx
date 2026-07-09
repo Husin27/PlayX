@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { THEME_CONFIG } from "@/config/theme-constants";
 
 // 🔴 THE SACRED OFFICIAL TANSTACK CORE & VIRTUAL IMPORTERS SECURED!
 import {
@@ -98,7 +99,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
       isRowMovable = false,
       isColumnMovable = false,
       rowIdentifierKey = "id",
-      rowHeightPx = 42,
+      rowHeightPx = THEME_CONFIG.layout.virtualRowHeight,
       activeRowKey,
       onRowClick,
       onDataChange,
@@ -171,7 +172,10 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
           id: col.key,
           accessorKey: col.key,
           header: col.headerLabel,
-          size: Math.max(80, (col.widthPercent / 100) * 1200),
+          size: Math.max(
+            80,
+            (col.widthPercent / 100) * THEME_CONFIG.layout.desktopMaxWidth,
+          ),
           minSize: 60,
           maxSize: 800,
           enableSorting: col.enableSorting !== false,
@@ -660,7 +664,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
 
         <div
           className="relative overflow-auto"
-          style={{ maxHeight: "600px" }}
+          style={{ maxHeight: THEME_CONFIG.layout.maxGridHeight }}
           onKeyDown={(e) => {
             if (e.key === "ArrowDown" || e.key === "ArrowUp") {
               e.preventDefault();

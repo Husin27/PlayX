@@ -7,15 +7,10 @@ import React, {
   useCallback,
 } from "react";
 import { X } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn } from "@/lib/utils";
 import { HintBox } from "./hint-box";
 import type { PopupMenuConfig } from "./popup-menu";
-
-// ðŸš€ LOCAL VANILLA CN UTILITY CORES
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { THEME_CONFIG } from "@/config/theme-constants";
 
 // ðŸš¦ LOCAL TYPE ISOLATION GATEWAY
 export interface DrawerRootProps {
@@ -57,7 +52,7 @@ function useDrawerContext() {
 }
 
 const SIZE_CLASSES = {
-  sm: "w-[320px] max-w-[90vw]",
+  sm: `w-[${THEME_CONFIG.layout.dropdownMaxHeight.replace("px", "")}px] max-w-[90vw]`,
   md: "w-[400px] max-w-[90vw]",
   lg: "w-[560px] max-w-[90vw]",
   xl: "w-[720px] max-w-[90vw]",

@@ -1,11 +1,5 @@
 import React, { forwardRef } from "react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-// 🚀 LOCAL VANILLA CN UTILITY CORES
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from "@/lib/utils";
 
 // 🚦 LOCAL TYPE ISOLATION GATEWAY
 export type BadgeVariant = "brand" | "success" | "warning" | "danger" | "muted";

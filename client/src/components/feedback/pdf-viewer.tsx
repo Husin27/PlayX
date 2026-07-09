@@ -13,18 +13,14 @@ import {
   ExternalLink,
   MoreHorizontal,
 } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn } from "@/lib/utils";
 import { HintBox } from "./hint-box";
 import {
   PopupMenu,
   type PopupMenuConfig,
   type PopupMenuItemConfig,
 } from "./popup-menu";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { THEME_CONFIG } from "@/config/theme-constants";
 
 export interface PdfViewerProps extends React.HTMLAttributes<HTMLDivElement> {
   src?: string;
@@ -41,7 +37,7 @@ export const PdfViewer = forwardRef<HTMLDivElement, PdfViewerProps>(
       src,
       title = "PDF Document",
       fallbackText = "Unable to display PDF. Your browser may not support embedded PDFs.",
-      height = "600px",
+      height = THEME_CONFIG.layout.maxGridHeight,
       className,
       style,
       hint,

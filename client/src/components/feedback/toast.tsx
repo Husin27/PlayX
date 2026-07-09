@@ -1,13 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Toaster as SonnerToaster, toast as sonnerToast } from "sonner";
 import { X, Pin, LucideIcon } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-// 🚀 LOCAL VANILLA CN UTILITY CORES
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from "@/lib/utils";
 
 // 🚦 LOCAL TYPE ISOLATION GATEWAY
 export interface ToastActionIconConfig {

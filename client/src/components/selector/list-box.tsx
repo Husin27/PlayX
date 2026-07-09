@@ -7,15 +7,10 @@ import React, {
   useMemo,
 } from "react";
 import { LucideIcon } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn } from "@/lib/utils";
 import { HintBox } from "../feedback/hint-box";
 import { Checkbox } from "./checkbox";
 import type { PopupMenuConfig } from "../feedback/popup-menu";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export interface ListBoxOption extends Record<string, unknown> {
   id?: string | number;

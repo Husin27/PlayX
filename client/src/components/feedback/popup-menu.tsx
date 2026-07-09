@@ -1,14 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { LucideIcon } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/selector/checkbox";
-
-// 🚀 LOCAL VANILLA CN UTILITY CORES
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export interface PopupMenuConfig {
   trigger: (e: React.MouseEvent, recordRow?: Record<string, unknown>) => void;
