@@ -27,13 +27,6 @@ export class DOMEngineImpl implements DOMEngine {
     this.container = el;
   }
 
-  /**
-   * Get the current container element.
-   */
-  public getContainer(): HTMLElement | null {
-    return this.container;
-  }
-
   // ============================================================================
   // Element Creation & Manipulation
   // ============================================================================
@@ -139,6 +132,13 @@ export class DOMEngineImpl implements DOMEngine {
   // ============================================================================
   // Centralized DOM Query Methods - SINGLE SOURCE OF TRUTH
   // ============================================================================
+
+  /**
+   * Get the current container element.
+   */
+  public getContainer(): HTMLElement | null {
+    return this.container;
+  }
 
   /**
    * Get all report pages.

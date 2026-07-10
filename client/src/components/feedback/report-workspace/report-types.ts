@@ -556,6 +556,8 @@ export interface DOMEngine {
     event: string,
     handler: (event: Event) => void,
   ): void;
+  getContainer(): HTMLElement | null;
+  getPages(): NodeListOf<HTMLElement>;
 }
 
 /** Element creation options */

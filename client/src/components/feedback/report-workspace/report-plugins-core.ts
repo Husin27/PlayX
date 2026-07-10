@@ -1,5 +1,9 @@
 import React from "react";
 import type { ReportWorkspaceState } from "./report-types";
+import type {
+  ReportWorkspaceUIContext,
+  ReportWorkspaceMutableContext,
+} from "./types/plugin-types";
 
 /**
  * Plugin Infrastructure Core for Report Workspace.
@@ -7,25 +11,27 @@ import type { ReportWorkspaceState } from "./report-types";
  * Zero "any" usage. Strict discriminated unions.
  */
 
-export interface ReportWorkspaceContext extends ReportWorkspaceState {
-  htmlContent: string;
-  setZoom: React.Dispatch<React.SetStateAction<number>>;
-  setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
-  setIsDarkMode: React.Dispatch<React.SetStateAction<boolean>>;
-  triggerAutoFit: () => void;
-}
-
 export interface ReportWorkspacePlugin {
   id: string;
   name: string;
-  onInit?: (context: ReportWorkspaceContext) => void;
+  onInit?: (
+    uiCtx: ReportWorkspaceUIContext,
+    mutCtx: ReportWorkspaceMutableContext,
+  ) => void;
+  onMounted?: (
+    container: HTMLDivElement,
+    uiCtx: ReportWorkspaceUIContext,
+  ) => void;
+  onUnmounted?: (container: HTMLDivElement) => void;
   onDOMRender?: (
     container: HTMLDivElement,
-    context: ReportWorkspaceContext,
+    uiCtx: ReportWorkspaceUIContext,
   ) => void;
-  renderToolbarAction?: (context: ReportWorkspaceContext) => React.ReactNode;
+  renderToolbarAction?: (
+    context: ReportWorkspaceUIContext & ReportWorkspaceMutableContext,
+  ) => React.ReactNode;
   renderContextMenuItems?: (
-    context: ReportWorkspaceContext,
+    uiCtx: ReportWorkspaceUIContext,
     targetElement: HTMLElement,
   ) => React.ReactNode;
 }
