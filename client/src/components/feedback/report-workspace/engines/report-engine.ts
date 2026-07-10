@@ -5,8 +5,11 @@ import { HyperlinkEngine } from "./hyperlink-engine";
 import { GroupEngine } from "./group-engine";
 import { TooltipEngine } from "./tooltip-engine";
 import { ContextMenuEngine } from "./contextmenu-engine";
-import type { ReportWorkspacePlugin } from "../report-plugins-core";
-import type { ReportWorkspaceUIContext } from "../types/plugin-types";
+import { ActionRegistry } from "../services/action-registry";
+import type {
+  ReportWorkspaceUIContext,
+  ReportWorkspaceMutableContext,
+} from "../types/plugin-types";
 
 export class ReportEngine {
   /**
@@ -20,7 +23,12 @@ export class ReportEngine {
   public readonly hyperlink: HyperlinkEngine = new HyperlinkEngine();
   public readonly group: GroupEngine = new GroupEngine();
   public readonly tooltip: TooltipEngine = new TooltipEngine();
-  public readonly contextMenu: ContextMenuEngine = new ContextMenuEngine();
+  public readonly contextMenu: ContextMenuEngine = new ContextMenuEngine({
+    uiCtx: {} as ReportWorkspaceUIContext,
+    mutCtx: {} as ReportWorkspaceMutableContext,
+    plugins: [],
+    coreRegistry: new ActionRegistry(),
+  });
 
   public mount(container: HTMLDivElement): void {
     this.dom.setContainer(container);
@@ -48,9 +56,7 @@ export class ReportEngine {
 
   public resolveContextMenuPipeline(
     target: HTMLElement,
-    plugins: ReportWorkspacePlugin[],
-    uiCtx: ReportWorkspaceUIContext,
   ): Record<string, () => void> {
-    return this.contextMenu.buildPipeline(target, plugins, uiCtx);
+    return this.contextMenu.buildPipeline(target);
   }
 }

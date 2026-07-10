@@ -1,4 +1,4 @@
-import type { ReportWorkspacePlugin } from "../report-plugins-core";
+import type { ReportWorkspacePlugin } from "./plugin-types";
 
 export interface ReportWorkspaceProps {
   htmlReportStream: string;

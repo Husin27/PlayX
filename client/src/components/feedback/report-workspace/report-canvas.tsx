@@ -1,8 +1,13 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { THEME_CONFIG } from "@/config/theme-constants";
-import { useReportUI, useReportEngineRef } from "./report-context";
-import { ReportWorkspacePlugin } from "./report-plugins-core";
+import {
+  useReportUI,
+  useReportEngineRef,
+  useReportMutable,
+} from "./report-context";
+import type { ReportWorkspacePlugin } from "./types/plugin-types";
+import type { PluginExecutionContext } from "./types/plugin-types";
 
 export interface ReportCanvasProps {
   plugins?: ReportWorkspacePlugin[];
@@ -11,7 +16,21 @@ export interface ReportCanvasProps {
 export const ReportCanvas: React.FC<ReportCanvasProps> = ({ plugins = [] }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const ui = useReportUI();
+  const mut = useReportMutable();
   const engine = useReportEngineRef();
+
+  // Create execution context for plugins
+  const executionContext = useMemo<PluginExecutionContext>(
+    () => ({
+      pluginId: "",
+      pluginName: "",
+      uiContext: ui,
+      mutableContext: mut,
+      initializedAt: Date.now(),
+      metadata: new Map(),
+    }),
+    [ui, mut],
+  );
 
   useEffect(() => {
     const container = canvasRef.current;
@@ -22,8 +41,15 @@ export const ReportCanvas: React.FC<ReportCanvasProps> = ({ plugins = [] }) => {
     engine.render.applyVisualScale(container, ui.autoFitScale, ui.zoom);
     engine.render.toggleThemeInversion(container, ui.isDarkMode);
 
-    // Invoke active plugins render pass cleanly
-    plugins.forEach((plugin) => plugin.onDOMRender?.(container, ui));
+    // Invoke active plugins render pass cleanly with execution context
+    plugins.forEach((plugin) => {
+      const ctx: PluginExecutionContext = {
+        ...executionContext,
+        pluginId: plugin.id,
+        pluginName: plugin.name,
+      };
+      plugin.onDOMRender?.(container, ui, ctx);
+    });
   }, [
     ui.htmlContent,
     ui.zoom,
@@ -31,6 +57,7 @@ export const ReportCanvas: React.FC<ReportCanvasProps> = ({ plugins = [] }) => {
     ui.isDarkMode,
     engine,
     plugins,
+    executionContext,
   ]);
 
   return (

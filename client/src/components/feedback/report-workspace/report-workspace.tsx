@@ -9,6 +9,7 @@ import type { ReportWorkspaceProps } from "./types/workspace-types";
 import type {
   ReportWorkspaceUIContext,
   ReportWorkspaceMutableContext,
+  PluginExecutionContext,
 } from "./types/plugin-types";
 
 export const ReportWorkspace = forwardRef<HTMLDivElement, ReportWorkspaceProps>(
@@ -87,10 +88,35 @@ export const ReportWorkspace = forwardRef<HTMLDivElement, ReportWorkspaceProps>(
       const detectedPages = engine.dom.getPages();
       if (detectedPages.length > 0) setTotalPages(detectedPages.length);
 
-      plugins.forEach((plugin) => plugin.onMounted?.(container, uiCtx));
+      // Create execution context for plugins
+      const executionContext: PluginExecutionContext = {
+        pluginId: "",
+        pluginName: "",
+        uiContext: uiCtx,
+        mutableContext: mutCtx,
+        initializedAt: Date.now(),
+        metadata: new Map(),
+      };
+
+      plugins.forEach((plugin) => {
+        const ctx: PluginExecutionContext = {
+          ...executionContext,
+          pluginId: plugin.id,
+          pluginName: plugin.name,
+          mountedAt: Date.now(),
+        };
+        plugin.onMounted?.(container, uiCtx, ctx);
+      });
 
       return () => {
-        plugins.forEach((plugin) => plugin.onUnmounted?.(container));
+        plugins.forEach((plugin) => {
+          const ctx: PluginExecutionContext = {
+            ...executionContext,
+            pluginId: plugin.id,
+            pluginName: plugin.name,
+          };
+          plugin.onUnmounted?.(container, ctx);
+        });
         engine.unmount();
       };
     }, [htmlReportStream, plugins, uiCtx, engine, onLinkClick]);

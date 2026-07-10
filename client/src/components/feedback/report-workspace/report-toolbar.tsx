@@ -1,11 +1,15 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useReportUI, useReportMutable } from "./report-context";
-import type { ReportWorkspacePlugin } from "./report-plugins-core";
+import type { ReportWorkspacePlugin } from "./types/plugin-types";
 import type {
   ReportWorkspaceUIContext,
   ReportWorkspaceMutableContext,
 } from "./types/plugin-types";
+import {
+  ActionRegistry,
+  getDefaultCoreRegistry,
+} from "./services/action-registry";
 
 export interface ReportToolbarProps {
   reportTitle?: string;
@@ -18,35 +22,87 @@ export const ReportToolbar: React.FC<ReportToolbarProps> = ({
   hint,
   plugins = [],
 }) => {
-  const { zoom, isDarkMode, currentPage, totalPages } = useReportUI();
-  const { setZoom, setIsDarkMode, setCurrentPage, triggerAutoFit } =
-    useReportMutable();
-
-  const handleZoomIn = () => setZoom((z: number) => Math.min(z + 10, 200));
-  const handleZoomOut = () => setZoom((z: number) => Math.max(z - 10, 50));
-  const handleZoomReset = () => setZoom(100);
-  const handleToggleTheme = () => setIsDarkMode((d: boolean) => !d);
-  const handlePrevPage = () =>
-    setCurrentPage((p: number) => Math.max(p - 1, 1));
-  const handleNextPage = () =>
-    setCurrentPage((p: number) => Math.min(p + 1, totalPages));
-  const handleAutoFit = () => triggerAutoFit();
-
-  const uiCtx = {
+  const {
     zoom,
     isDarkMode,
     currentPage,
     totalPages,
-    autoFitScale: 1,
-    showWarningBanner: false,
-    htmlContent: "",
-  } as ReportWorkspaceUIContext;
-  const mutCtx = {
+    autoFitScale,
+    showWarningBanner,
+    htmlContent,
+  } = useReportUI();
+  const {
     setZoom,
-    setCurrentPage,
     setIsDarkMode,
+    setCurrentPage,
     triggerAutoFit,
-  } as ReportWorkspaceMutableContext;
+    setAutoFitScale,
+    setShowWarningBanner,
+  } = useReportMutable();
+
+  const uiCtx = useMemo<ReportWorkspaceUIContext>(
+    () => ({
+      zoom,
+      isDarkMode,
+      currentPage,
+      totalPages,
+      autoFitScale,
+      showWarningBanner,
+      htmlContent,
+    }),
+    [
+      zoom,
+      isDarkMode,
+      currentPage,
+      totalPages,
+      autoFitScale,
+      showWarningBanner,
+      htmlContent,
+    ],
+  );
+
+  const mutCtx = useMemo<ReportWorkspaceMutableContext>(
+    () => ({
+      setZoom,
+      setCurrentPage,
+      setIsDarkMode,
+      setAutoFitScale,
+      setShowWarningBanner,
+      triggerAutoFit,
+    }),
+    [
+      setZoom,
+      setCurrentPage,
+      setIsDarkMode,
+      setAutoFitScale,
+      setShowWarningBanner,
+      triggerAutoFit,
+    ],
+  );
+
+  // Get merged action registry (core + plugins)
+  const actionRegistry = useMemo(() => {
+    const coreRegistry = getDefaultCoreRegistry(uiCtx, mutCtx);
+    const pluginRegistries = plugins
+      .filter((p) => p.renderToolbarAction)
+      .map((plugin) => {
+        const registry = new ActionRegistry();
+        // Plugin toolbar actions are rendered directly as React nodes
+        // The registry merger handles core + plugin actions
+        plugin.renderToolbarAction?.({
+          ...uiCtx,
+          ...mutCtx,
+        });
+        return registry;
+      });
+    return ActionRegistry.merge(coreRegistry, ...pluginRegistries);
+  }, [plugins, uiCtx, mutCtx]);
+
+  // Get toolbar actions from registry
+  const toolbarActions = useMemo(
+    () => actionRegistry.getToolbarActions(uiCtx),
+    [actionRegistry, uiCtx],
+  );
 
   return (
     <div
@@ -64,67 +120,37 @@ export const ReportToolbar: React.FC<ReportToolbarProps> = ({
           </span>
         )}
       </div>
-      <div className="flex items-center gap-2 border-l border-border pl-3">
-        <button
-          onClick={handleZoomOut}
-          className="p-1 hover:bg-accent rounded"
-          title="Zoom Out"
-        >
-          −
-        </button>
-        <span className="w-16 text-center text-sm font-mono">{zoom}%</span>
-        <button
-          onClick={handleZoomIn}
-          className="p-1 hover:bg-accent rounded"
-          title="Zoom In"
-        >
-          +
-        </button>
-        <button
-          onClick={handleZoomReset}
-          className="p-1 hover:bg-accent rounded"
-          title="Reset Zoom"
-        >
-          100%
-        </button>
-        <button
-          onClick={handleAutoFit}
-          className="p-1 hover:bg-accent rounded"
-          title="Auto Fit"
-        >
-          ⛶
-        </button>
-      </div>
-      <div className="flex items-center gap-2 border-l border-border pl-3">
-        <button
-          onClick={handleToggleTheme}
-          className="p-1 hover:bg-accent rounded"
-          title="Toggle Theme"
-        >
-          {isDarkMode ? "☀" : "🌙"}
-        </button>
-      </div>
-      <div className="flex items-center gap-2 border-l border-border pl-3">
-        <button
-          onClick={handlePrevPage}
-          disabled={currentPage <= 1}
-          className="p-1 hover:bg-accent rounded disabled:opacity-50"
-          title="Previous Page"
-        >
-          ←
-        </button>
-        <span className="text-sm text-muted-foreground w-24 text-center">
-          {currentPage} / {totalPages}
-        </span>
-        <button
-          onClick={handleNextPage}
-          disabled={currentPage >= totalPages}
-          className="p-1 hover:bg-accent rounded disabled:opacity-50"
-          title="Next Page"
-        >
-          →
-        </button>
-      </div>
+
+      {/* Render action groups from registry */}
+      {actionRegistry.getGroups().map((group) => {
+        const groupActions = toolbarActions.filter((a) => a.group === group.id);
+        if (groupActions.length === 0) return null;
+
+        return (
+          <div
+            key={group.id}
+            className="flex items-center gap-2 border-l border-border pl-3"
+          >
+            {groupActions.map((action) => (
+              <button
+                key={action.id}
+                onClick={() => action.action(uiCtx, mutCtx)}
+                disabled={
+                  action.enabled === false ||
+                  (typeof action.enabled === "function" &&
+                    !action.enabled(uiCtx))
+                }
+                className="p-1 hover:bg-accent rounded"
+                title={action.label}
+              >
+                {action.icon ?? action.label}
+              </button>
+            ))}
+          </div>
+        );
+      })}
+
+      {/* Plugin custom toolbar actions (rendered as React nodes) */}
       <div className="flex items-center gap-1 ml-auto">
         {plugins.map((plugin) =>
           plugin.renderToolbarAction?.({ ...uiCtx, ...mutCtx }),
