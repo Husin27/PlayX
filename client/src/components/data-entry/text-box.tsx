@@ -1,14 +1,9 @@
-import React, { forwardRef, useRef, useCallback, useState } from "react";
+import React, { forwardRef, useRef, useCallback, useState, useId } from "react";
 import { LucideIcon } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn } from "@/lib/utils";
 import { Button } from "../general/button";
 import { HintBox } from "../feedback/hint-box";
 import type { PopupMenuConfig } from "../feedback/popup-menu";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export interface TextBoxInnerIconConfig {
   icon: LucideIcon;
@@ -46,12 +41,15 @@ export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
       actionButtons = [],
       className,
       disabled,
+      readOnly,
       required,
       placeholder,
       value,
       defaultValue,
       onChange,
       onBlur,
+      onFocus,
+      id,
       ...props
     },
     ref,
@@ -59,6 +57,9 @@ export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
     const inputRef = useRef<HTMLInputElement>(null);
     const hasError = Boolean(error);
     const [isFocused, setIsFocused] = useState(false);
+    const generatedId = useId();
+    const inputId = id ?? generatedId;
+    const errorId = hasError ? `${inputId}-error` : undefined;
 
     const handleRef = useCallback(
       (node: HTMLInputElement | null) => {
@@ -89,9 +90,13 @@ export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
       [onBlur],
     );
 
-    const handleFocus = useCallback(() => {
-      setIsFocused(true);
-    }, []);
+    const handleFocus = useCallback(
+      (e: React.FocusEvent<HTMLInputElement>) => {
+        setIsFocused(true);
+        onFocus?.(e);
+      },
+      [onFocus],
+    );
 
     const limitedInnerIcons = innerIcons.slice(0, 4);
     const limitedActionButtons = actionButtons.slice(0, 4);
@@ -108,6 +113,7 @@ export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
         )}
         {label && (
           <label
+            htmlFor={inputId}
             className={cn(
               "block text-sm font-medium text-text-main mb-1.5",
               disabled && "opacity-50",
@@ -135,21 +141,32 @@ export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
               hasError &&
                 "border-destructive/50 focus-within:ring-destructive/50 focus-within:border-destructive/50",
               disabled && "bg-muted/50",
-              isFocused && "ring-2 ring-amber-500/20 border-amber-500",
+              readOnly && "bg-muted/30 border-muted-foreground/20",
+              readOnly &&
+                "focus-within:ring-2 focus-within:ring-muted-foreground/20 focus-within:border-muted-foreground/30",
+              //              isFocused && "ring-2 ring-amber-500/20 border-amber-500",
+              //              hasError && isFocused && "ring-destructive/50 border-destructive",
+              !hasError &&
+                isFocused &&
+                "ring-2 ring-amber-500/20 border-amber-500",
+              hasError && isFocused && "ring-destructive/50 border-destructive",
             )}
           >
             <input
               ref={handleRef}
+              id={inputId}
               type="text"
               className={cn(
                 "flex-1 bg-transparent border-none outline-none",
                 "px-4 py-2.5",
                 "text-text-main placeholder:text-muted-foreground/60",
                 "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
+                "read-only:bg-transparent read-only:pointer-events-auto read-only:cursor-text",
                 "w-full min-w-0",
                 limitedInnerIcons.length > 0 ? "pr-12" : "pr-4",
               )}
               disabled={disabled}
+              readOnly={readOnly}
               required={required}
               placeholder={placeholder}
               value={value}
@@ -157,6 +174,8 @@ export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
               onChange={handleChange}
               onBlur={handleBlur}
               onFocus={handleFocus}
+              aria-invalid={hasError}
+              aria-describedby={errorId}
               {...props}
             />
             {limitedInnerIcons.length > 0 && (
@@ -200,6 +219,7 @@ export const TextBox = forwardRef<HTMLInputElement, TextBoxProps>(
         </div>
         {error && (
           <p
+            id={errorId}
             className={cn(
               "mt-1.5 text-sm",
               "text-destructive/90",
