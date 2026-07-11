@@ -75,6 +75,12 @@ export const ReportCanvas: React.FC<ReportCanvasProps> = ({
         mutRef?.current?.setCurrentPage(1);
       }
 
+      // Run AutoFit after HTML injection and page discovery
+      const isCleanFit = engine.runAutoFitSequence((scale) => {
+        mutRef?.current?.setAutoFitScale(scale);
+      });
+      mutRef?.current?.setShowWarningBanner(!isCleanFit);
+
       // Trigger onDOMRender for mounted plugins after HTML injection
       if (
         uiRef &&
