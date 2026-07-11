@@ -1,4 +1,5 @@
 import type { ReportWorkspacePlugin } from "./plugin-types";
+import type { PageNumberingConfig } from "../services/page-numbering-service";
 
 export interface ReportWorkspaceProps {
   htmlReportStream: string;
@@ -9,4 +10,6 @@ export interface ReportWorkspaceProps {
   onLinkClick?: (type: string, id: string) => void;
   className?: string;
   style?: React.CSSProperties;
+  /** Page numbering configuration */
+  pageNumbering?: PageNumberingConfig;
 }

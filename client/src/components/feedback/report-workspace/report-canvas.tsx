@@ -7,6 +7,11 @@ import type {
   PluginExecutionContext,
   ReportWorkspaceMutableContext,
 } from "./types/plugin-types";
+import {
+  PageNumberingServiceFactory,
+  type PageNumberingService,
+  type PageNumberingConfig,
+} from "./services/page-numbering-service";
 
 export interface ReportCanvasProps {
   onContainerReady?: (container: HTMLDivElement | null) => void;
@@ -25,6 +30,8 @@ export interface ReportCanvasProps {
   pluginInstanceRef?: React.MutableRefObject<
     Map<string, ReportWorkspacePlugin>
   >;
+  /** Page numbering configuration */
+  pageNumbering?: PageNumberingConfig;
 }
 
 export const ReportCanvas: React.FC<ReportCanvasProps> = ({
@@ -34,6 +41,7 @@ export const ReportCanvas: React.FC<ReportCanvasProps> = ({
   pluginMountedRef,
   pluginInitializedAtRef,
   pluginInstanceRef,
+  pageNumbering,
 }) => {
   const ui = useReportUI();
   const engine = useReportEngineRef();
@@ -43,6 +51,7 @@ export const ReportCanvas: React.FC<ReportCanvasProps> = ({
   const prevHtmlContentRef = useRef<string>("");
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const pageNumberingServiceRef = useRef<PageNumberingService | null>(null);
 
   const handleContainerRef = React.useCallback(
     (el: HTMLDivElement | null) => {
@@ -74,6 +83,20 @@ export const ReportCanvas: React.FC<ReportCanvasProps> = ({
       } else if (currentPage < 1) {
         mutRef?.current?.setCurrentPage(1);
       }
+
+      // Initialize page numbering service after HTML injection and page discovery
+      if (!pageNumberingServiceRef.current) {
+        pageNumberingServiceRef.current = PageNumberingServiceFactory.create();
+        pageNumberingServiceRef.current.initialize(container, engine.dom);
+      }
+
+      // Apply page numbering configuration if provided
+      if (pageNumbering) {
+        pageNumberingServiceRef.current.setConfig(pageNumbering);
+      }
+
+      // Apply page numbering (idempotent - won't duplicate overlays)
+      pageNumberingServiceRef.current.applyNumbering();
 
       // Run AutoFit after HTML injection and page discovery
       const isCleanFit = engine.runAutoFitSequence((scale) => {
@@ -114,6 +137,7 @@ export const ReportCanvas: React.FC<ReportCanvasProps> = ({
     pluginMountedRef,
     pluginInitializedAtRef,
     pluginInstanceRef,
+    pageNumbering,
   ]);
 
   // Visual update effect: runs only on zoom, AutoFit scale, or dark mode changes
@@ -124,6 +148,33 @@ export const ReportCanvas: React.FC<ReportCanvasProps> = ({
     engine.render.applyVisualScale(container, ui.autoFitScale, ui.zoom);
     engine.render.toggleThemeInversion(container, ui.isDarkMode);
   }, [ui.zoom, ui.autoFitScale, ui.isDarkMode, engine]);
+
+  // Page numbering config effect: runs only when pageNumbering config changes
+  // Updates or removes overlays without reinjecting HTML, rerunning page discovery,
+  // rerunning AutoFit, or calling plugin callbacks
+  useEffect(() => {
+    const service = pageNumberingServiceRef.current;
+    if (!service) return;
+
+    if (pageNumbering?.enabled) {
+      service.setConfig(pageNumbering);
+    } else {
+      service.removeNumbering();
+    }
+  }, [
+    pageNumbering?.enabled,
+    pageNumbering?.format,
+    pageNumbering?.position,
+    pageNumbering?.className,
+  ]);
+
+  // Cleanup page numbering service on unmount
+  useEffect(() => {
+    return () => {
+      pageNumberingServiceRef.current?.destroy();
+      pageNumberingServiceRef.current = null;
+    };
+  }, []);
 
   return (
     <div className="flex-1 overflow-auto p-8 flex flex-col items-center bg-background/30 relative min-h-[400px]">

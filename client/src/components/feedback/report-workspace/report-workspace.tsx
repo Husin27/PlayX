@@ -18,6 +18,7 @@ import type {
   ReportWorkspaceMutableContext,
   ReportWorkspacePlugin,
 } from "./types/plugin-types";
+import type { PageNumberingConfig } from "./services/page-numbering-service";
 
 export const ReportWorkspace = forwardRef<HTMLDivElement, ReportWorkspaceProps>(
   (
@@ -30,6 +31,7 @@ export const ReportWorkspace = forwardRef<HTMLDivElement, ReportWorkspaceProps>(
       onLinkClick,
       className,
       style,
+      pageNumbering,
       ...props
     },
     ref,
@@ -322,6 +324,7 @@ export const ReportWorkspace = forwardRef<HTMLDivElement, ReportWorkspaceProps>(
                   pluginMountedRef={pluginMountedRef}
                   pluginInitializedAtRef={pluginInitializedAtRef}
                   pluginInstanceRef={pluginInstanceRef}
+                  pageNumbering={pageNumbering}
                 />
                 <ReportWarningBar />
               </div>

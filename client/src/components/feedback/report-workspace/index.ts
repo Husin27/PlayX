@@ -26,6 +26,15 @@ export { ReportWorkspace } from "./report-workspace";
 export type { ReportWorkspaceProps } from "./types/workspace-types";
 
 // ============================================================================
+// PUBLIC API - Page Numbering Types
+// ============================================================================
+
+export type {
+  PageNumberingConfig,
+  PageNumberPosition,
+} from "./services/page-numbering-service";
+
+// ============================================================================
 // INTERNAL - NOT EXPORTED (Internalized)
 // ============================================================================
 // The following are INTERNALIZED and NOT exported publicly:
@@ -38,6 +47,6 @@ export type { ReportWorkspaceProps } from "./types/workspace-types";
 // - Components: ReportToolbar, ReportCanvas, ReportWarningBar
 // - All Report Types from report-types.ts
 // - All Workspace Types from workspace-types.ts
-// - All Service Types from services/
+// - All Service Types from services/ (except PageNumberingConfig, PageNumberPosition)
 // - All Engine Types from engines/
 // ============================================================================
