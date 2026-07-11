@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { THEME_CONFIG } from "@/config/theme-constants";
 import {
@@ -11,10 +11,13 @@ import type { PluginExecutionContext } from "./types/plugin-types";
 
 export interface ReportCanvasProps {
   plugins?: ReportWorkspacePlugin[];
+  onContainerReady?: (container: HTMLDivElement | null) => void;
 }
 
-export const ReportCanvas: React.FC<ReportCanvasProps> = ({ plugins = [] }) => {
-  const canvasRef = useRef<HTMLDivElement>(null);
+export const ReportCanvas: React.FC<ReportCanvasProps> = ({
+  plugins = [],
+  onContainerReady,
+}) => {
   const ui = useReportUI();
   const mut = useReportMutable();
   const engine = useReportEngineRef();
@@ -32,8 +35,18 @@ export const ReportCanvas: React.FC<ReportCanvasProps> = ({ plugins = [] }) => {
     [ui, mut],
   );
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const handleContainerRef = React.useCallback(
+    (el: HTMLDivElement | null) => {
+      containerRef.current = el;
+      onContainerReady?.(el);
+    },
+    [onContainerReady],
+  );
+
   useEffect(() => {
-    const container = canvasRef.current;
+    const container = containerRef.current;
     if (!container) return;
 
     // Delegate rendering injection and mutations straight into the new RenderEngine
@@ -63,7 +76,7 @@ export const ReportCanvas: React.FC<ReportCanvasProps> = ({ plugins = [] }) => {
   return (
     <div className="flex-1 overflow-auto p-8 flex flex-col items-center bg-background/30 relative min-h-[400px]">
       <div
-        ref={canvasRef}
+        ref={handleContainerRef}
         className={cn(
           "bg-white text-black shadow-2xl transition-transform duration-200 ease-out origin-top",
           ui.isDarkMode &&

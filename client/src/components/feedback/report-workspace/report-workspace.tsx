@@ -27,7 +27,6 @@ export const ReportWorkspace = forwardRef<HTMLDivElement, ReportWorkspaceProps>(
     },
     ref,
   ) => {
-    const canvasContainerRef = useRef<HTMLDivElement>(null);
     const [zoom, setZoom] = useState<number>(100);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [totalPages, setTotalPages] = useState<number>(1);
@@ -74,12 +73,21 @@ export const ReportWorkspace = forwardRef<HTMLDivElement, ReportWorkspaceProps>(
       [engine],
     );
 
+    const reportRootRef = useRef<HTMLDivElement | null>(null);
+
+    const handleContainerReady = React.useCallback(
+      (container: HTMLDivElement | null) => {
+        reportRootRef.current = container;
+      },
+      [],
+    );
+
     useEffect(() => {
       plugins.forEach((plugin) => plugin.onInit?.(uiCtx, mutCtx));
     }, [plugins, uiCtx, mutCtx]);
 
     useEffect(() => {
-      const container = canvasContainerRef.current;
+      const container = reportRootRef.current;
       if (!container) return;
 
       engine.mount(container);
@@ -144,11 +152,11 @@ export const ReportWorkspace = forwardRef<HTMLDivElement, ReportWorkspaceProps>(
                 hint={hint}
                 plugins={plugins}
               />
-              <div
-                ref={canvasContainerRef}
-                className="relative flex flex-col w-full flex-1 overflow-hidden"
-              >
-                <ReportCanvas plugins={plugins} />
+              <div className="relative flex flex-col w-full flex-1 overflow-hidden">
+                <ReportCanvas
+                  plugins={plugins}
+                  onContainerReady={handleContainerReady}
+                />
                 <ReportWarningBar />
               </div>
             </div>
