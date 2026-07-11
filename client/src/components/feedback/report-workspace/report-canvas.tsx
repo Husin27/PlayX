@@ -62,6 +62,19 @@ export const ReportCanvas: React.FC<ReportCanvasProps> = ({
       prevHtmlContentRef.current = ui.htmlContent;
       engine.render.parseAndInjectStream(ui.htmlContent, container);
 
+      // Discover pages after HTML injection and update totalPages
+      const detectedPages = engine.dom.getPages();
+      const pageCount = detectedPages.length > 0 ? detectedPages.length : 1;
+      mutRef?.current?.setTotalPages(pageCount);
+
+      // Clamp currentPage to valid range [1, totalPages]
+      const currentPage = uiRef?.current?.currentPage ?? 1;
+      if (currentPage > pageCount) {
+        mutRef?.current?.setCurrentPage(pageCount);
+      } else if (currentPage < 1) {
+        mutRef?.current?.setCurrentPage(1);
+      }
+
       // Trigger onDOMRender for mounted plugins after HTML injection
       if (
         uiRef &&

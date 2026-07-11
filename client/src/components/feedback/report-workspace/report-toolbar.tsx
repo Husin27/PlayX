@@ -35,6 +35,7 @@ export const ReportToolbar: React.FC<ReportToolbarProps> = ({
     setZoom,
     setIsDarkMode,
     setCurrentPage,
+    setTotalPages,
     triggerAutoFit,
     setAutoFitScale,
     setShowWarningBanner,
@@ -65,6 +66,7 @@ export const ReportToolbar: React.FC<ReportToolbarProps> = ({
     () => ({
       setZoom,
       setCurrentPage,
+      setTotalPages,
       setIsDarkMode,
       setAutoFitScale,
       setShowWarningBanner,
@@ -73,6 +75,7 @@ export const ReportToolbar: React.FC<ReportToolbarProps> = ({
     [
       setZoom,
       setCurrentPage,
+      setTotalPages,
       setIsDarkMode,
       setAutoFitScale,
       setShowWarningBanner,

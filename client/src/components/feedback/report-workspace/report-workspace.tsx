@@ -55,6 +55,7 @@ export const ReportWorkspace = forwardRef<HTMLDivElement, ReportWorkspaceProps>(
     const mutRef = useRef<ReportWorkspaceMutableContext>({
       setZoom,
       setCurrentPage,
+      setTotalPages,
       setIsDarkMode,
       setAutoFitScale,
       setShowWarningBanner,
@@ -76,6 +77,7 @@ export const ReportWorkspace = forwardRef<HTMLDivElement, ReportWorkspaceProps>(
     mutRef.current = {
       setZoom,
       setCurrentPage,
+      setTotalPages,
       setIsDarkMode,
       setAutoFitScale,
       setShowWarningBanner,
@@ -235,9 +237,6 @@ export const ReportWorkspace = forwardRef<HTMLDivElement, ReportWorkspaceProps>(
       engine.bindCoreListeners((type, id) =>
         onLinkClickRef.current?.(type, id),
       );
-
-      const detectedPages = engine.dom.getPages();
-      if (detectedPages.length > 0) setTotalPages(detectedPages.length);
 
       for (const [pluginId, plugin] of pluginInstanceRef.current) {
         if (!pluginMountedRef.current.has(pluginId)) {
