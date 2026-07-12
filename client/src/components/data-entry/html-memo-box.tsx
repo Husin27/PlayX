@@ -3,6 +3,7 @@ import React, {
   useImperativeHandle,
   useState,
   useEffect,
+  useId,
 } from "react";
 import {
   Bold,
@@ -37,6 +38,7 @@ export interface HtmlMemoBoxProps extends Omit<
   onChange?: (html: string) => void;
   actionIcons?: HtmlMemoActionConfig[];
   disabled?: boolean;
+  readOnly?: boolean;
   required?: boolean;
 }
 
@@ -57,14 +59,20 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
       onChange,
       actionIcons = [],
       disabled = false,
+      readOnly = false,
       className,
       required,
+      onFocus,
+      onBlur,
       ...props
     },
     ref,
   ) => {
     const [isFocused, setIsFocused] = useState(false);
     const hasError = Boolean(error);
+    const generatedId = useId();
+    const editorId = props.id ?? generatedId;
+    const errorId = hasError ? `${editorId}-error` : undefined;
 
     const editor = useEditor({
       extensions: [
@@ -77,13 +85,31 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
         UnderlineExtension,
       ],
       content: defaultValue,
-      editable: !disabled,
+      editable: !disabled && !readOnly,
       immediatelyRender: false,
       onUpdate: ({ editor }) => {
         onChange?.(editor.getHTML());
       },
-      onFocus: () => setIsFocused(true),
-      onBlur: () => setIsFocused(false),
+      onFocus: ({
+        event,
+      }: {
+        editor: unknown;
+        event: FocusEvent;
+        transaction: unknown;
+      }) => {
+        setIsFocused(true);
+        onFocus?.(event as unknown as React.FocusEvent<HTMLDivElement>);
+      },
+      onBlur: ({
+        event,
+      }: {
+        editor: unknown;
+        event: FocusEvent;
+        transaction: unknown;
+      }) => {
+        setIsFocused(false);
+        onBlur?.(event as unknown as React.FocusEvent<HTMLDivElement>);
+      },
       editorProps: {
         attributes: {
           class: cn(
@@ -91,6 +117,7 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
             "min-h-[120px] p-4",
             "text-text-main placeholder:text-muted-foreground/60",
             disabled && "opacity-50 pointer-events-none cursor-not-allowed",
+            readOnly && "bg-muted/30 text-muted-foreground cursor-text",
             hasError && "border-destructive/50",
           ),
         },
@@ -154,7 +181,6 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
       <div
         className={cn("w-full", className)}
         onContextMenu={(e) => popupMenu?.trigger(e)}
-        {...props}
       >
         {hint && (
           <HintBox content={hint} className="mb-1.5">
@@ -163,6 +189,7 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
         )}
         {label && (
           <label
+            htmlFor={editorId}
             className={cn(
               "block text-sm font-medium text-text-main mb-1.5",
               disabled && "opacity-50",
@@ -184,6 +211,7 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
               "border-b border-[color-mix(in_oklch,var(--color-border)_60%,transparent)]",
               "rounded-t-surface",
               disabled && "opacity-50 pointer-events-none",
+              readOnly && "opacity-50 pointer-events-none",
             )}
             role="toolbar"
             aria-label="Text formatting"
@@ -201,7 +229,7 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
                 )}
                 aria-label={btn.tooltip}
                 aria-pressed={btn.isActive()}
-                disabled={disabled || !editor}
+                disabled={disabled || readOnly || !editor}
                 onClick={btn.onClick}
               >
                 <btn.icon className="w-4 h-4" aria-hidden="true" />
@@ -213,22 +241,25 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
               "w-full bg-card/90 backdrop-blur-[var(--backdrop-blur)]",
               "border-[color-mix(in_oklch,var(--color-border)_60%,transparent)]",
               "rounded-b-surface",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
               "transition-all duration-200 ease-out",
               "min-h-[120px]",
               "outline-none",
-              hasError &&
-                "border-destructive/50 focus-visible:ring-destructive/50",
+              hasError && "border-destructive/50",
               disabled && "bg-muted/50",
-              isFocused &&
-                "ring-2 ring-ring ring-offset-2 ring-offset-background",
+              readOnly && "bg-muted/30 border-muted-foreground/20",
+              !readOnly &&
+                !hasError &&
+                isFocused &&
+                "ring-2 ring-amber-500/20 border-amber-500",
+              hasError && isFocused && "ring-destructive/50 border-destructive",
             )}
             role="textbox"
             aria-multiline="true"
             aria-label={label}
             aria-invalid={hasError}
-            aria-describedby={error ? "html-memo-error" : undefined}
+            aria-describedby={errorId}
+            id={editorId}
           >
             {editor && <EditorContent editor={editor} />}
           </div>
@@ -253,7 +284,7 @@ export const HtmlMemoBox = forwardRef<HtmlMemoBoxRef, HtmlMemoBoxProps>(
         </div>
         {error && (
           <p
-            id="html-memo-error"
+            id={errorId}
             className={cn(
               "mt-1.5 text-sm",
               "text-destructive/90",

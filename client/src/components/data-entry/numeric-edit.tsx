@@ -4,17 +4,13 @@ import React, {
   useEffect,
   useRef,
   useCallback,
+  useId,
 } from "react";
 import { LucideIcon } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn } from "@/lib/utils";
 import { Button } from "../general/button";
 import { HintBox } from "../feedback/hint-box";
 import type { PopupMenuConfig } from "../feedback/popup-menu";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export interface NumericEditInnerIconConfig {
   icon: LucideIcon;
@@ -46,6 +42,7 @@ export interface NumericEditProps extends Omit<
   defaultValue?: number | string;
   onChange?: (value: number) => void;
   decimalPlaces?: number;
+  readOnly?: boolean;
 }
 
 export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(
@@ -63,12 +60,16 @@ export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(
       suffixIcon,
       className,
       disabled,
+      readOnly,
       required,
       placeholder,
       value,
       defaultValue,
       onChange,
       decimalPlaces = 2,
+      onFocus,
+      onBlur,
+      onKeyDown,
       ...props
     },
     ref,
@@ -76,7 +77,11 @@ export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(
     const inputRef = useRef<HTMLInputElement>(null);
     const hasError = Boolean(error);
     const [isEditing, setIsEditing] = useState(!f2Editable);
+    const [isFocused, setIsFocused] = useState(false);
     const [displayValue, setDisplayValue] = useState<string>("");
+    const generatedId = useId();
+    const inputId = props.id ?? generatedId;
+    const errorId = hasError ? `${inputId}-error` : undefined;
 
     const sanitizeValue = useCallback(
       (val: string): string => {
@@ -143,6 +148,25 @@ export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(
       [ref],
     );
 
+    const handleFocus = useCallback(
+      (e: React.FocusEvent<HTMLInputElement>) => {
+        setIsFocused(true);
+        onFocus?.(e);
+      },
+      [onFocus],
+    );
+
+    const handleBlur = useCallback(
+      (e: React.FocusEvent<HTMLInputElement>) => {
+        setIsFocused(false);
+        if (f2Editable && isEditing) {
+          setIsEditing(false);
+        }
+        onBlur?.(e);
+      },
+      [f2Editable, isEditing, onBlur],
+    );
+
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (f2Editable && e.key === "F2") {
@@ -159,8 +183,9 @@ export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(
           const numValue = parseToNumber(displayValue);
           navigator.clipboard?.writeText(numValue.toString());
         }
+        onKeyDown?.(e);
       },
-      [f2Editable, isEditing, displayValue, parseToNumber],
+      [f2Editable, isEditing, displayValue, parseToNumber, onKeyDown],
     );
 
     const handleChange = useCallback(
@@ -173,12 +198,6 @@ export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(
       },
       [isEditing, sanitizeValue, parseToNumber, onChange],
     );
-
-    const handleBlur = useCallback(() => {
-      if (f2Editable && isEditing) {
-        setIsEditing(false);
-      }
-    }, [f2Editable, isEditing]);
 
     const limitedInnerIcons = innerIcons.slice(0, 4);
     const limitedActionButtons = actionButtons.slice(0, 4);
@@ -197,6 +216,7 @@ export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(
         )}
         {label && (
           <label
+            htmlFor={inputId}
             className={cn(
               "block text-sm font-medium text-text-main mb-1.5",
               disabled && "opacity-50",
@@ -218,14 +238,18 @@ export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(
               "border-[color-mix(in_oklch,var(--color-border)_60%,transparent)]",
               "rounded-surface",
               "text-text-main placeholder:text-muted-foreground/60",
-              "focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 focus-within:bg-amber-500/5",
               "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
               "transition-all duration-200 ease-out",
-              hasError &&
-                "border-destructive/50 focus-within:ring-destructive/50 focus-within:border-destructive/50",
+              hasError && "border-destructive/50",
               disabled && "bg-muted/50",
+              readOnly && "bg-muted/30 border-muted-foreground/20",
               f2Editable && !isEditing && "bg-muted/30",
               f2Editable && isEditing && "bg-amber-500/5 border-amber-500",
+              !readOnly &&
+                !hasError &&
+                isFocused &&
+                "ring-2 ring-amber-500/20 border-amber-500",
+              hasError && isFocused && "ring-destructive/50 border-destructive",
             )}
           >
             {(prefixSymbol || prefixIcon) && (
@@ -250,6 +274,8 @@ export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(
             )}
             <input
               ref={handleRef}
+              {...props}
+              id={inputId}
               type="text"
               inputMode="decimal"
               className={cn(
@@ -262,18 +288,20 @@ export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(
                 "font-mono",
                 prefixSymbol || prefixIcon ? "pl-0" : "pl-4",
                 suffixIcon || limitedInnerIcons.length > 0 ? "pr-0" : "pr-4",
-                f2Editable && !isEditing && "cursor-not-allowed",
+                f2Editable && !isEditing && "cursor-pointer",
                 f2Editable && isEditing && "bg-amber-500/5",
               )}
-              disabled={disabled || (f2Editable && !isEditing)}
+              disabled={disabled}
+              readOnly={readOnly || (f2Editable && !isEditing)}
               required={required}
               placeholder={placeholder}
               value={displayValue}
               onChange={handleChange}
               onKeyDown={handleKeyDown}
+              onFocus={handleFocus}
               onBlur={handleBlur}
-              readOnly={f2Editable && !isEditing}
-              {...props}
+              aria-invalid={hasError}
+              aria-describedby={errorId}
             />
             {suffixIcon && (
               <div
@@ -328,6 +356,7 @@ export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(
         </div>
         {error && (
           <p
+            id={errorId}
             className={cn(
               "mt-1.5 text-sm",
               "text-destructive/90",
