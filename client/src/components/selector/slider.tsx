@@ -7,15 +7,27 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  useId,
 } from "react";
 import { cn } from "@/lib/utils";
 import { HintBox } from "../feedback/hint-box";
 import type { PopupMenuConfig } from "../feedback/popup-menu";
 
-// 🚦 LOCAL TYPE ISOLATION GATEWAY
+// ðŸš¦ LOCAL TYPE ISOLATION GATEWAY
 export interface SliderProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
-  "onChange" | "value" | "defaultValue" | "type"
+  | "onChange"
+  | "value"
+  | "defaultValue"
+  | "type"
+  | "aria-describedby"
+  | "aria-invalid"
+  | "aria-disabled"
+  | "aria-valuemin"
+  | "aria-valuemax"
+  | "aria-valuenow"
+  | "aria-valuetext"
+  | "aria-orientation"
 > {
   label?: string;
   error?: string;
@@ -30,6 +42,7 @@ export interface SliderProps extends Omit<
   onChange?: (value: number | string) => void;
   showValue?: boolean;
   orientation?: "horizontal" | "vertical";
+  readOnly?: boolean;
 }
 
 export const Slider = forwardRef<HTMLInputElement, SliderProps>(
@@ -50,10 +63,43 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
       disabled,
       showValue = true,
       orientation = "horizontal",
-      ...props
+      id: providedId,
+      required,
+      name,
+      readOnly = false,
     },
     ref,
   ) => {
+    const {
+      onKeyDown: onKeyDownProp,
+      onFocus: onFocusProp,
+      onBlur: onBlurProp,
+      ...restProps
+    } = {
+      label,
+      error,
+      hint,
+      popupMenu,
+      min,
+      max,
+      step,
+      value,
+      defaultValue,
+      stepsArray,
+      onChange,
+      className,
+      disabled,
+      showValue,
+      orientation,
+      id: providedId,
+      required,
+      name,
+      readOnly,
+      onKeyDown: undefined,
+      onFocus: undefined,
+      onBlur: undefined,
+    };
+
     const sliderRef = useRef<HTMLDivElement>(null);
     const thumbRef = useRef<HTMLDivElement>(null);
     const trackRef = useRef<HTMLDivElement>(null);
@@ -89,9 +135,16 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
       return effectiveMin;
     });
 
+    const generatedId = useId();
+    const id = providedId ?? generatedId;
+    const errorId = `${id}-error`;
+
     const [focused, setFocused] = useState(false);
     const [hovered, setHovered] = useState(false);
 
+    const isActuallyDisabled = disabled ?? false;
+    const isReadOnly = readOnly;
+    const isActuallyDisabledOrReadOnly = isActuallyDisabled || isReadOnly;
     const clampedValue = useMemo(() => {
       let val = internalValue;
       if (val < effectiveMin) val = effectiveMin;
@@ -116,7 +169,6 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
       return clampedValue;
     }, [isEnumMode, stepsArray, clampedValue]);
 
-    const isActuallyDisabled = disabled ?? false;
     const hasError = !!error;
 
     useEffect(() => {
@@ -175,7 +227,7 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
       (
         e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>,
       ) => {
-        if (isActuallyDisabled) return;
+        if (isActuallyDisabledOrReadOnly) return;
 
         isDraggingRef.current = true;
         const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
@@ -186,18 +238,18 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
         e.preventDefault();
         updateValueFromPosition(clientX, clientY);
       },
-      [isActuallyDisabled, clampedValue, updateValueFromPosition],
+      [isActuallyDisabledOrReadOnly, clampedValue, updateValueFromPosition],
     );
 
     const handleMouseMove = useCallback(
       (e: MouseEvent | TouchEvent) => {
-        if (!isDraggingRef.current || isActuallyDisabled) return;
+        if (!isDraggingRef.current || isActuallyDisabledOrReadOnly) return;
 
         const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
         const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
         updateValueFromPosition(clientX, clientY);
       },
-      [isActuallyDisabled, updateValueFromPosition],
+      [isActuallyDisabledOrReadOnly, updateValueFromPosition],
     );
 
     const handleMouseUp = useCallback(() => {
@@ -227,15 +279,28 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
         document.removeEventListener("mouseup", handleMouseUp);
         document.removeEventListener(
           "touchmove",
-          handleMouseMove as EventListener,
+          handleMouseMove as EventListener as EventListener,
         );
         document.removeEventListener("touchend", handleMouseUp);
       };
     }, [handleMouseMove, handleMouseUp]);
 
+    const handleTrackClick = useCallback(
+      (e: React.MouseEvent<HTMLDivElement>) => {
+        if (isActuallyDisabledOrReadOnly) return;
+        if (e.currentTarget === e.target) {
+          updateValueFromPosition(e.clientX, e.clientY);
+        }
+      },
+      [isActuallyDisabledOrReadOnly, updateValueFromPosition],
+    );
+
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (isActuallyDisabled) return;
+        if (isActuallyDisabledOrReadOnly) {
+          onKeyDownProp?.(e);
+          return;
+        }
 
         let newValue = clampedValue;
         let shouldUpdate = false;
@@ -285,25 +350,34 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
           setInternalValue(newValue);
           notifyChange(newValue);
         }
+
+        onKeyDownProp?.(e);
       },
       [
-        isActuallyDisabled,
+        isActuallyDisabledOrReadOnly,
         clampedValue,
         effectiveMin,
         effectiveMax,
         effectiveStep,
         notifyChange,
+        onKeyDownProp,
       ],
     );
 
-    const handleTrackClick = useCallback(
-      (e: React.MouseEvent<HTMLDivElement>) => {
-        if (isActuallyDisabled) return;
-        if (e.currentTarget === e.target) {
-          updateValueFromPosition(e.clientX, e.clientY);
-        }
+    const handleFocus = useCallback(
+      (e: React.FocusEvent<HTMLDivElement>) => {
+        setFocused(true);
+        onFocusProp?.(e);
       },
-      [isActuallyDisabled, updateValueFromPosition],
+      [onFocusProp],
+    );
+
+    const handleBlur = useCallback(
+      (e: React.FocusEvent<HTMLDivElement>) => {
+        setFocused(false);
+        onBlurProp?.(e);
+      },
+      [onBlurProp],
     );
 
     const combinedRef = useCallback(
@@ -324,10 +398,10 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
       "w-full h-2",
       "rounded-full bg-border",
       "transition-colors duration-200 ease-out",
-      "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+      "peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
       "disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed",
-      "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
-      hasError && "border-destructive focus-visible:ring-destructive",
+      "peer-aria-invalid:border-destructive peer-aria-invalid:ring-3 peer-aria-invalid:ring-destructive/20",
+      hasError && "border-destructive peer-focus-visible:ring-destructive",
       orientation === "vertical" && "w-2 h-full",
       className,
     );
@@ -387,7 +461,7 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
     const containerClasses = cn(
       "inline-flex flex-col gap-2",
       orientation === "vertical" && "items-center",
-      isActuallyDisabled && "opacity-50 pointer-events-none",
+      isActuallyDisabledOrReadOnly && "opacity-50 pointer-events-none",
     );
 
     const errorClasses = cn(
@@ -410,7 +484,11 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
             <span className="text-sm text-text-muted" />
           </HintBox>
         )}
-        {label && <label className={labelClasses}>{label}</label>}
+        {label && (
+          <label htmlFor={id} className={labelClasses}>
+            {label}
+          </label>
+        )}
 
         <div
           ref={sliderRef}
@@ -423,21 +501,23 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
             handleMouseDown as React.TouchEventHandler<HTMLDivElement>
           }
           onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          tabIndex={isActuallyDisabled ? -1 : 0}
+          tabIndex={isActuallyDisabledOrReadOnly ? -1 : 0}
           role="slider"
+          id={id}
           aria-label={label}
           aria-valuemin={effectiveMin}
           aria-valuemax={effectiveMax}
           aria-valuenow={clampedValue}
           aria-valuetext={String(displayValue)}
           aria-orientation={orientation}
-          aria-disabled={isActuallyDisabled}
+          aria-disabled={isActuallyDisabledOrReadOnly}
           aria-invalid={hasError ? "true" : "false"}
-          aria-required={props.required}
+          aria-required={required}
+          aria-describedby={hasError ? errorId : undefined}
         >
           <div
             ref={trackRef}
@@ -485,7 +565,12 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
         </div>
 
         {error && (
-          <p className={errorClasses} role="alert" aria-live="polite">
+          <p
+            id={errorId}
+            className={errorClasses}
+            role="alert"
+            aria-live="polite"
+          >
             {error}
           </p>
         )}
@@ -495,8 +580,8 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(
           type="hidden"
           value={isEnumMode ? displayValue : clampedValue}
           disabled={isActuallyDisabled}
-          required={props.required}
-          name={props.name}
+          required={required}
+          name={name}
         />
       </div>
     );

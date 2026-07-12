@@ -5,6 +5,7 @@ import React, {
   useRef,
   useCallback,
   useMemo,
+  useId,
 } from "react";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,14 @@ export interface ListBoxRightActionConfig {
 
 export interface ListBoxProps extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
-  "onChange" | "value"
+  | "onChange"
+  | "value"
+  | "aria-describedby"
+  | "aria-invalid"
+  | "aria-disabled"
+  | "onFocus"
+  | "onBlur"
+  | "onKeyDown"
 > {
   label?: string;
   error?: string;
@@ -43,6 +51,8 @@ export interface ListBoxProps extends Omit<
   valueKey?: string;
   rightActionButtons?: ListBoxRightActionConfig[];
   disabled?: boolean;
+  readOnly?: boolean;
+  required?: boolean;
 }
 
 export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
@@ -61,10 +71,17 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
       rightActionButtons = [],
       disabled = false,
       className,
+      id: providedId,
+      required,
+      readOnly = false,
       ...props
     },
     ref,
   ) => {
+    const generatedId = useId();
+    const id = providedId ?? generatedId;
+    const errorId = `${id}-error`;
+
     const containerRef = useRef<HTMLDivElement>(null);
     const [focusedIndex, setFocusedIndex] = useState<number>(-1);
     const [selectedValues, setSelectedValues] = useState<unknown[]>([]);
@@ -100,8 +117,14 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
       [selectedValues, getOptionValue],
     );
 
+    const isActuallyDisabled = disabled ?? false;
+    const isReadOnly = readOnly;
+    const isActuallyDisabledOrReadOnly = isActuallyDisabled || isReadOnly;
+
     const handleSelectionChange = useCallback(
       (option: ListBoxOption) => {
+        if (isActuallyDisabledOrReadOnly) return;
+
         const optValue = getOptionValue(option);
         const isSelected = isOptionSelected(option);
 
@@ -117,11 +140,20 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
         setSelectedValues(newSelectedValues);
         onChange?.(multiple ? newSelectedValues : newSelectedValues[0], option);
       },
-      [multiple, selectedValues, getOptionValue, isOptionSelected, onChange],
+      [
+        multiple,
+        selectedValues,
+        getOptionValue,
+        isOptionSelected,
+        onChange,
+        isActuallyDisabledOrReadOnly,
+      ],
     );
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLDivElement>, index: number) => {
+        if (isActuallyDisabledOrReadOnly) return;
+
         switch (e.key) {
           case "ArrowDown":
             e.preventDefault();
@@ -143,15 +175,17 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
             break;
         }
       },
-      [options, handleSelectionChange],
+      [options, handleSelectionChange, isActuallyDisabledOrReadOnly],
     );
 
     const handleRowClick = useCallback(
       (
-        e: React.MouseEvent<HTMLButtonElement>,
+        e: React.MouseEvent<HTMLDivElement>,
         option: ListBoxOption,
         index: number,
       ) => {
+        if (isActuallyDisabledOrReadOnly) return;
+
         if (rightActionButtons.length > 0) {
           const target = e.target as HTMLElement;
           const isActionButton = target.closest('[data-action-button="true"]');
@@ -163,7 +197,7 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
         }
         setFocusedIndex(index);
       },
-      [rightActionButtons, handleSelectionChange],
+      [rightActionButtons, handleSelectionChange, isActuallyDisabledOrReadOnly],
     );
 
     const handleActionClick = useCallback(
@@ -172,10 +206,12 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
         action: ListBoxRightActionConfig,
         option: ListBoxOption,
       ) => {
+        if (isActuallyDisabledOrReadOnly) return;
+
         e.stopPropagation();
         action.onClick(e, option);
       },
-      [],
+      [isActuallyDisabledOrReadOnly],
     );
 
     const handleFocus = useCallback((index: number) => {
@@ -207,9 +243,10 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
         )}
         {label && (
           <label
+            htmlFor={id}
             className={cn(
               "block text-sm font-medium text-text-main mb-1.5",
-              disabled && "opacity-50",
+              isActuallyDisabled && "opacity-50",
             )}
           >
             {label}
@@ -217,21 +254,29 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
         )}
         <div
           ref={containerRef}
+          id={id}
           className={cn(
             "bg-card/90 backdrop-blur-[var(--backdrop-blur)]",
             "border-[color-mix(in_oklch,var(--color-border)_40%,transparent)]",
             "rounded-surface",
             "overflow-hidden",
-            "focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 focus-within:bg-amber-500/5",
+            !isActuallyDisabled &&
+              !isReadOnly &&
+              !hasError &&
+              "focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 focus-within:bg-amber-500/5",
             "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
             "transition-all duration-200 ease-out",
             hasError &&
               "border-destructive/50 focus-within:ring-destructive/50 focus-within:border-destructive/50",
-            disabled && "bg-muted/50",
+            isActuallyDisabledOrReadOnly && "bg-muted/50",
           )}
           role="listbox"
           aria-multiselectable={multiple}
-          tabIndex={disabled ? -1 : 0}
+          aria-describedby={hasError ? errorId : undefined}
+          aria-invalid={hasError ? "true" : "false"}
+          aria-disabled={isActuallyDisabledOrReadOnly}
+          aria-required={required}
+          tabIndex={isActuallyDisabledOrReadOnly ? -1 : 0}
           onKeyDown={(e) => handleKeyDown(e, focusedIndex)}
           onFocus={() => handleFocus(0)}
           onBlur={handleBlur}
@@ -241,7 +286,7 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
               No options available
             </div>
           ) : (
-            <div role="listbox" aria-label="Options">
+            <div role="group" aria-label="Options">
               {options.map((option, index) => {
                 const isSelected = isOptionSelected(option);
                 const isFocused = index === focusedIndex;
@@ -249,12 +294,10 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
                 const optLabel = getOptionLabel(option);
 
                 return (
-                  <button
+                  <div
                     key={String(optValue)}
-                    type="button"
                     role="option"
                     aria-selected={isSelected}
-                    aria-highlighted={isFocused}
                     tabIndex={-1}
                     onClick={(e) => handleRowClick(e, option, index)}
                     onFocus={() => handleFocus(index)}
@@ -267,7 +310,7 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
                       isFocused && "bg-brand-primary/5 text-text-main",
                       isSelected &&
                         "bg-brand-primary/10 text-brand-primary font-semibold border-l-2 border-brand-primary",
-                      disabled &&
+                      isActuallyDisabledOrReadOnly &&
                         "opacity-50 pointer-events-none cursor-not-allowed",
                     )}
                   >
@@ -275,7 +318,7 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
                       <Checkbox
                         checked={isSelected}
                         onChange={() => handleSelectionChange(option)}
-                        disabled={disabled}
+                        disabled={isActuallyDisabledOrReadOnly}
                         className="shrink-0"
                         aria-hidden="true"
                       />
@@ -313,7 +356,7 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
                               handleActionClick(e, action, option)
                             }
                             aria-label={action.tooltipText || "Action"}
-                            disabled={disabled}
+                            disabled={isActuallyDisabledOrReadOnly}
                           >
                             <action.icon
                               className="w-4 h-4"
@@ -323,7 +366,7 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
                         ))}
                       </div>
                     )}
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -331,12 +374,14 @@ export const ListBox = forwardRef<HTMLDivElement, ListBoxProps>(
         </div>
         {error && (
           <p
+            id={errorId}
             className={cn(
               "mt-1.5 text-sm",
               "text-destructive/90",
               "font-medium",
             )}
             role="alert"
+            aria-live="polite"
           >
             {error}
           </p>

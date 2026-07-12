@@ -8,6 +8,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useId,
 } from "react";
 import { Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ interface RadioGroupContextValue {
   allowClear: boolean;
   disabled: boolean;
   error: string | undefined;
+  errorId: string | undefined;
   orientation: "horizontal" | "vertical";
   registerOption: (
     value: string,
@@ -78,14 +80,18 @@ const RadioOption = React.forwardRef<HTMLInputElement, RadioOptionProps>(
       allowClear,
       disabled,
       error,
+      errorId: groupErrorId,
       registerOption,
       unregisterOption,
       setFocusedValue,
     } = useRadioGroupContext();
 
     const inputRef = useRef<HTMLInputElement>(null);
+    const generatedId = useId();
+    const id = `${name}-${option.value}-${generatedId}`;
     const isChecked = value === option.value;
     const isDisabled = disabled || option.disabled;
+    const hasError = !!error;
 
     useEffect(() => {
       registerOption(option.value, inputRef);
@@ -98,7 +104,7 @@ const RadioOption = React.forwardRef<HTMLInputElement, RadioOptionProps>(
       }
     }, [isChecked]);
 
-    const handleChange = useCallback(() => {
+    const handleClick = useCallback(() => {
       if (isDisabled) return;
 
       if (allowClear && isChecked) {
@@ -173,13 +179,13 @@ const RadioOption = React.forwardRef<HTMLInputElement, RadioOptionProps>(
       "border-border bg-background",
       "transition-all duration-200 ease-out",
       "active:scale-95",
-      "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+      "peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
       "disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed",
-      "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
+      "peer-aria-invalid:border-destructive peer-aria-invalid:ring-3 peer-aria-invalid:ring-destructive/20",
       isChecked
         ? "bg-brand-primary border-brand-primary text-white shadow-sm hover:shadow-md"
         : "hover:border-brand-primary/50 hover:bg-brand-primary/5",
-      error && "border-destructive focus-visible:ring-destructive",
+      hasError && "border-destructive peer-focus-visible:ring-destructive",
       className,
     );
 
@@ -192,7 +198,7 @@ const RadioOption = React.forwardRef<HTMLInputElement, RadioOptionProps>(
       "text-sm font-medium leading-none",
       "transition-colors duration-200 ease-out",
       "text-text-main",
-      error && "text-destructive/90",
+      hasError && "text-destructive/90",
       isDisabled && "opacity-50",
       "ml-2",
     );
@@ -203,7 +209,7 @@ const RadioOption = React.forwardRef<HTMLInputElement, RadioOptionProps>(
     );
 
     return (
-      <label className={containerClasses}>
+      <label className={containerClasses} htmlFor={id}>
         <input
           ref={(el) => {
             inputRef.current = el;
@@ -215,19 +221,20 @@ const RadioOption = React.forwardRef<HTMLInputElement, RadioOptionProps>(
               }
             }
           }}
+          id={id}
           type="radio"
           name={name}
           value={option.value}
           checked={isChecked}
           disabled={isDisabled}
-          onChange={handleChange}
+          onClick={handleClick}
           onKeyDown={handleKeyDown}
           onFocus={handleFocus}
           onBlur={handleBlur}
           aria-checked={isChecked}
-          aria-invalid={error ? "true" : "false"}
+          aria-invalid={hasError ? "true" : "false"}
           aria-disabled={isDisabled}
-          aria-required={true}
+          aria-describedby={hasError ? groupErrorId : undefined}
           className="sr-only peer"
         />
         <div className={radioClasses} aria-hidden="true">
@@ -260,6 +267,9 @@ export function RadioGroup({
   const optionRefs = useRef<
     Map<string, React.RefObject<HTMLInputElement | null>>
   >(new Map());
+  const generatedId = useId();
+  const groupId = name ?? `radiogroup-${generatedId}`;
+  const errorId = `${groupId}-error`;
 
   const registerOption = useCallback(
     (optionValue: string, ref: React.RefObject<HTMLInputElement | null>) => {
@@ -280,6 +290,7 @@ export function RadioGroup({
       allowClear,
       disabled,
       error,
+      errorId,
       orientation,
       registerOption,
       unregisterOption,
@@ -293,6 +304,7 @@ export function RadioGroup({
       allowClear,
       disabled,
       error,
+      errorId,
       orientation,
       registerOption,
       unregisterOption,
@@ -321,6 +333,7 @@ export function RadioGroup({
         aria-invalid={!!error}
         aria-disabled={disabled}
         aria-orientation={orientation}
+        aria-describedby={error ? errorId : undefined}
         onContextMenu={(e) => popupMenu?.trigger(e)}
       >
         {options.map((option) => (
@@ -328,6 +341,7 @@ export function RadioGroup({
         ))}
         {error && (
           <p
+            id={errorId}
             className={cn(
               "text-sm",
               "text-destructive/90",

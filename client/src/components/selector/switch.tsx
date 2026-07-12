@@ -1,20 +1,28 @@
 "use client";
 
-import React, { forwardRef, useRef } from "react";
+import React, { forwardRef, useRef, useId, useState } from "react";
 import { cn } from "@/lib/utils";
 import { HintBox } from "../feedback/hint-box";
 import type { PopupMenuConfig } from "../feedback/popup-menu";
 
-// 🚦 LOCAL TYPE ISOLATION GATEWAY
+// ðŸš¦ LOCAL TYPE ISOLATION GATEWAY
 export interface SwitchProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
-  "onChange" | "type"
+  | "onChange"
+  | "type"
+  | "aria-describedby"
+  | "aria-invalid"
+  | "aria-disabled"
+  | "aria-checked"
+  | "aria-required"
 > {
   label?: string;
   error?: string;
   hint?: string;
   popupMenu?: PopupMenuConfig;
   checked?: boolean;
+  defaultChecked?: boolean;
+  readOnly?: boolean;
   onChange?: (checked: boolean) => void;
 }
 
@@ -26,31 +34,62 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       hint,
       popupMenu,
       checked,
+      defaultChecked,
+      readOnly = false,
       onChange,
       className,
       disabled,
+      id: providedId,
+      onFocus,
+      onBlur,
+      onKeyDown,
+      required,
       ...props
     },
     ref,
   ) => {
     const inputRef = useRef<HTMLInputElement>(null);
-    const isChecked = checked ?? false;
+    const generatedId = useId();
+    const id = providedId ?? generatedId;
+    const errorId = `${id}-error`;
+    const isControlled = checked !== undefined;
+    const [uncontrolledChecked, setUncontrolledChecked] = useState(
+      defaultChecked ?? false,
+    );
+    const isChecked = isControlled ? checked : uncontrolledChecked;
     const hasError = !!error;
     const isActuallyDisabled = disabled ?? false;
+    const isReadOnly = readOnly;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (isActuallyDisabled) return;
+      if (isActuallyDisabled || isReadOnly) return;
       const newChecked = e.target.checked;
+      if (!isControlled) {
+        setUncontrolledChecked(newChecked);
+      }
       onChange?.(newChecked);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === " " || e.key === "Enter") {
+      if (e.key === "Enter") {
         e.preventDefault();
-        if (!isActuallyDisabled) {
-          onChange?.(!isChecked);
+        if (!isActuallyDisabled && !isReadOnly) {
+          const newChecked = !isChecked;
+          if (!isControlled) {
+            setUncontrolledChecked(newChecked);
+          }
+          onChange?.(newChecked);
         }
       }
+      onKeyDown?.(e);
+    };
+
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+      onFocus?.(e);
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      onBlur?.(e);
     };
 
     const switchTrackClasses = cn(
@@ -60,13 +99,14 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       "border-border bg-background",
       "transition-all duration-200 ease-out",
       "active:scale-95 duration-150 transition-all",
-      "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+      "peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
       "disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed",
-      "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
+      "peer-aria-invalid:border-destructive peer-aria-invalid:ring-3 peer-aria-invalid:ring-destructive/20",
       isChecked
         ? "bg-brand-primary border-brand-primary shadow-sm hover:shadow-md"
         : "hover:border-brand-primary/50 hover:bg-brand-primary/5",
-      hasError && "border-destructive focus-visible:ring-destructive",
+      hasError && "border-destructive peer-focus-visible:ring-destructive",
+      isReadOnly && !isActuallyDisabled && "opacity-75 cursor-default",
       className,
     );
 
@@ -79,6 +119,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       "active:scale-95",
       isChecked ? "translate-x-full" : "translate-x-0",
       hasError && "shadow-destructive/20",
+      isReadOnly && !isActuallyDisabled && "opacity-75",
     );
 
     const labelClasses = cn(
@@ -87,6 +128,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       "text-text-main",
       hasError && "text-destructive/90",
       isActuallyDisabled && "opacity-50 pointer-events-none cursor-not-allowed",
+      isReadOnly && !isActuallyDisabled && "cursor-default opacity-75",
     );
 
     return (
@@ -96,7 +138,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
             <span className="text-sm text-text-muted" />
           </HintBox>
         )}
-        <label className={labelClasses}>
+        <label className={labelClasses} htmlFor={id}>
           <input
             ref={(el) => {
               inputRef.current = el;
@@ -108,18 +150,24 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
                 }
               }
             }}
+            {...props}
+            id={id}
             type="checkbox"
             role="switch"
             checked={isChecked}
             disabled={isActuallyDisabled}
+            readOnly={isReadOnly}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
             aria-checked={isChecked}
             aria-invalid={hasError ? "true" : "false"}
             aria-disabled={isActuallyDisabled}
-            aria-required={props.required}
+            aria-readonly={isReadOnly}
+            aria-required={required}
+            aria-describedby={hasError ? errorId : undefined}
             className="sr-only peer"
-            {...props}
           />
           <div className={switchTrackClasses} aria-hidden="true">
             <span className={thumbClasses} aria-hidden="true" />
@@ -132,12 +180,28 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
                 "text-text-main",
                 hasError && "text-destructive/90",
                 isActuallyDisabled && "opacity-50",
+                isReadOnly && !isActuallyDisabled && "opacity-75",
               )}
             >
               {label}
             </span>
           )}
         </label>
+        {error && (
+          <p
+            id={errorId}
+            className={cn(
+              "text-sm",
+              "text-destructive/90",
+              "transition-colors duration-200 ease-out",
+              "mt-1",
+            )}
+            role="alert"
+            aria-live="polite"
+          >
+            {error}
+          </p>
+        )}
       </div>
     );
   },

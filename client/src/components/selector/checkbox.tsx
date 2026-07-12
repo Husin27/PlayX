@@ -7,16 +7,24 @@ import React, {
   useContext,
   forwardRef,
   useMemo,
+  useId,
+  useState,
 } from "react";
 import { Check, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HintBox } from "../feedback/hint-box";
 import type { PopupMenuConfig } from "../feedback/popup-menu";
 
-// 🚦 LOCAL TYPE ISOLATION GATEWAY
+// ðŸš¦ LOCAL TYPE ISOLATION GATEWAY
 export interface CheckboxProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
-  "onChange" | "value"
+  | "onChange"
+  | "value"
+  | "aria-describedby"
+  | "aria-invalid"
+  | "aria-disabled"
+  | "aria-checked"
+  | "aria-required"
 > {
   label?: string;
   error?: string;
@@ -25,6 +33,8 @@ export interface CheckboxProps extends Omit<
   isIndeterminate?: boolean;
   value?: string;
   checked?: boolean;
+  defaultChecked?: boolean;
+  readOnly?: boolean;
   onChange?: (checked: boolean | "indeterminate", value?: string) => void;
 }
 
@@ -46,6 +56,7 @@ interface CheckboxGroupContextValue {
   maxChoice?: number;
   disabled?: boolean;
   error?: string;
+  errorId: string;
 }
 
 const CheckboxGroupContext = createContext<CheckboxGroupContextValue | null>(
@@ -62,14 +73,24 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       isIndeterminate = false,
       value,
       checked,
+      defaultChecked,
+      readOnly = false,
       onChange,
       className,
       disabled,
+      id: providedId,
+      onFocus,
+      onBlur,
+      onKeyDown,
+      required,
       ...props
     },
     ref,
   ) => {
     const inputRef = useRef<HTMLInputElement>(null);
+    const generatedId = useId();
+    const id = providedId ?? generatedId;
+    const errorId = `${id}-error`;
     const groupContext = useContext(CheckboxGroupContext);
     const isInGroup = !!groupContext;
     const isGroupDisabled = groupContext?.disabled ?? false;
@@ -79,9 +100,16 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     const groupOnChange = groupContext?.onChange;
 
     const isActuallyDisabled = disabled || isGroupDisabled;
+    const isReadOnly = readOnly || (isInGroup && groupContext?.disabled);
+    const isControlled = checked !== undefined;
+    const [uncontrolledChecked, setUncontrolledChecked] = useState(
+      defaultChecked ?? false,
+    );
     const isChecked = isInGroup
       ? groupValue.includes(value ?? "")
-      : (checked ?? false);
+      : isControlled
+        ? checked
+        : uncontrolledChecked;
     const hasError = error || isGroupError;
     const isAtMaxChoice =
       groupMaxChoice !== undefined &&
@@ -99,10 +127,14 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     }, [isIndeterminate]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (isActuallyDisabled || isAtMaxChoice) return;
+      if (isActuallyDisabled || isReadOnly || isAtMaxChoice) return;
 
       const newChecked = e.target.checked;
       const newValue = value ?? "";
+
+      if (!isControlled) {
+        setUncontrolledChecked(newChecked);
+      }
 
       if (isInGroup && groupOnChange) {
         const newGroupValue = newChecked
@@ -114,6 +146,22 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       onChange?.(newChecked ? true : false, newValue);
     };
 
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+      onFocus?.(e);
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      onBlur?.(e);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === " " && (isActuallyDisabled || isReadOnly)) {
+        e.preventDefault();
+        return;
+      }
+      onKeyDown?.(e);
+    };
+
     const checkboxClasses = cn(
       "relative inline-flex items-center justify-center",
       "w-5 h-5 shrink-0",
@@ -121,16 +169,17 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       "border-border bg-background",
       "transition-all duration-200 ease-out",
       "active:scale-95",
-      "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+      "peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-background",
       "disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed",
-      "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
+      "peer-aria-invalid:border-destructive peer-aria-invalid:ring-3 peer-aria-invalid:ring-destructive/20",
       isChecked && !isIndeterminate
         ? "bg-brand-primary border-brand-primary text-white shadow-sm hover:shadow-md"
         : isIndeterminate
           ? "bg-brand-primary border-brand-primary text-white shadow-sm hover:shadow-md"
           : "hover:border-brand-primary/50 hover:bg-brand-primary/5",
       isAtMaxChoice && "opacity-50 cursor-not-allowed",
-      hasError && "border-destructive focus-visible:ring-destructive",
+      isReadOnly && "opacity-75 cursor-default",
+      hasError && "border-destructive peer-focus-visible:ring-destructive",
       className,
     );
 
@@ -147,13 +196,17 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       isIndeterminate ? "scale-100 opacity-100" : "scale-0 opacity-0",
     );
 
+    const groupErrorId = isInGroup ? groupContext?.errorId : undefined;
+
     return (
       <label
         className={cn(
           "inline-flex items-center gap-2 cursor-pointer select-none",
           isActuallyDisabled &&
             "opacity-50 pointer-events-none cursor-not-allowed",
+          isReadOnly && !isActuallyDisabled && "cursor-default",
         )}
+        htmlFor={id}
       >
         <input
           ref={(el) => {
@@ -166,16 +219,25 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               }
             }
           }}
+          {...props}
+          id={id}
           type="checkbox"
           checked={isChecked}
           disabled={isActuallyDisabled || isAtMaxChoice}
+          readOnly={isReadOnly}
           onChange={handleChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
           aria-checked={isIndeterminate ? "mixed" : isChecked}
           aria-invalid={hasError ? "true" : "false"}
           aria-disabled={isActuallyDisabled}
-          aria-required={props.required}
+          aria-readonly={isReadOnly}
+          aria-required={required}
+          aria-describedby={
+            hasError ? (isInGroup ? groupErrorId : errorId) : undefined
+          }
           className="sr-only peer"
-          {...props}
         />
         <div className={checkboxClasses} aria-hidden="true">
           {isIndeterminate ? (
@@ -198,6 +260,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               "text-text-main",
               hasError && "text-destructive/90",
               isActuallyDisabled && "opacity-50",
+              isReadOnly && !isActuallyDisabled && "opacity-75",
             )}
           >
             {label}
@@ -220,6 +283,8 @@ export const CheckboxGroup = ({
   children,
   className,
 }: CheckboxGroupProps) => {
+  const errorId = useId();
+
   const contextValue = useMemo(
     () => ({
       value,
@@ -227,8 +292,9 @@ export const CheckboxGroup = ({
       maxChoice,
       disabled,
       error,
+      errorId,
     }),
-    [value, onChange, maxChoice, disabled, error],
+    [value, onChange, maxChoice, disabled, error, errorId],
   );
 
   return (
@@ -248,6 +314,7 @@ export const CheckboxGroup = ({
         {children}
         {error && (
           <p
+            id={errorId}
             className={cn(
               "text-sm",
               "text-destructive/90",
