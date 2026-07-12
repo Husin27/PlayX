@@ -26,7 +26,7 @@ export interface NumericEditActionButtonConfig {
 
 export interface NumericEditProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
-  "onChange" | "value" | "defaultValue"
+  "onChange" | "value" | "defaultValue" | "onFocus" | "onBlur" | "onKeyDown"
 > {
   label?: string;
   error?: string;
@@ -43,6 +43,10 @@ export interface NumericEditProps extends Omit<
   onChange?: (value: number) => void;
   decimalPlaces?: number;
   readOnly?: boolean;
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  id?: string;
 }
 
 export const NumericEdit = forwardRef<HTMLInputElement, NumericEditProps>(

@@ -4,6 +4,8 @@ import React, {
   useRef,
   useCallback,
   useImperativeHandle,
+  useId,
+  useEffect,
 } from "react";
 import { UploadCloud, File, Trash2, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,7 +22,7 @@ export interface FileUploadActionButtonConfig {
 
 export interface FileUploadProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
-  "onChange"
+  "onChange" | "onFocus" | "onBlur" | "onKeyDown"
 > {
   label?: string;
   error?: string;
@@ -30,6 +32,10 @@ export interface FileUploadProps extends Omit<
   acceptTypes?: string[];
   onChange?: (files: File[]) => void;
   actionButtons?: FileUploadActionButtonConfig[];
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  id?: string;
 }
 
 export interface FileUploadRef {
@@ -55,22 +61,54 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
       onChange,
       actionButtons = [],
       className,
-      disabled,
-      required,
+      disabled = false,
+      required = false,
+      onFocus,
+      onBlur,
+      onKeyDown: onKeyDownProp,
+      id,
       ...props
     },
     ref,
   ) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dropZoneRef = useRef<HTMLDivElement>(null);
+    const generatedId = useId();
+    const inputId = id ?? generatedId;
+    const errorId = `${inputId}-error`;
     const hasError = Boolean(error);
     const [files, setFiles] = useState<UploadedFile[]>([]);
     const [isDragOver, setIsDragOver] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
+    const isReadOnly = props.readOnly;
+    const filesRef = useRef<UploadedFile[]>([]);
+
+    // Keep filesRef in sync with files state
+    useEffect(() => {
+      filesRef.current = files;
+    }, [files]);
+
+    // Clean up object URLs on unmount only
+    useEffect(() => {
+      return () => {
+        filesRef.current.forEach((fileData) => {
+          if (fileData.preview) {
+            URL.revokeObjectURL(fileData.preview);
+          }
+        });
+      };
+    }, []);
 
     useImperativeHandle(ref, () => ({
       clearFiles: () => {
-        setFiles([]);
+        setFiles((prev) => {
+          prev.forEach((fileData) => {
+            if (fileData.preview) {
+              URL.revokeObjectURL(fileData.preview);
+            }
+          });
+          return [];
+        });
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
@@ -136,11 +174,11 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
       (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!disabled) {
+        if (!disabled && !isReadOnly) {
           setIsDragOver(true);
         }
       },
-      [disabled],
+      [disabled, isReadOnly],
     );
 
     const handleDragLeave = useCallback(
@@ -160,13 +198,13 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
         e.stopPropagation();
         setIsDragOver(false);
 
-        if (disabled) return;
+        if (disabled || isReadOnly) return;
 
         if (e.dataTransfer.files.length > 0) {
           processFiles(e.dataTransfer.files);
         }
       },
-      [disabled, processFiles],
+      [disabled, isReadOnly, processFiles],
     );
 
     const handleFileSelect = useCallback(
@@ -179,13 +217,38 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
       [processFiles],
     );
 
-    const handleFocus = useCallback(() => {
-      setIsFocused(true);
-    }, []);
+    const handleFocus = useCallback(
+      (e: React.FocusEvent<HTMLInputElement>) => {
+        setIsFocused(true);
+        onFocus?.(e);
+      },
+      [onFocus],
+    );
 
-    const handleBlur = useCallback(() => {
-      setIsFocused(false);
-    }, []);
+    const handleBlur = useCallback(
+      (e: React.FocusEvent<HTMLInputElement>) => {
+        setIsFocused(false);
+        onBlur?.(e);
+      },
+      [onBlur],
+    );
+
+    const openFileDialog = useCallback(() => {
+      if (!disabled && !isReadOnly && fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+    }, [disabled, isReadOnly]);
+
+    const handleKeyDown = useCallback(
+      (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if ((e.key === "Enter" || e.key === " ") && !disabled && !isReadOnly) {
+          e.preventDefault();
+          openFileDialog();
+        }
+        onKeyDownProp?.(e);
+      },
+      [disabled, isReadOnly, onKeyDownProp, openFileDialog],
+    );
 
     const removeFile = useCallback((fileId: string) => {
       setFiles((prev) => {
@@ -199,12 +262,6 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
 
     const limitedActionButtons = actionButtons.slice(0, 4);
 
-    const openFileDialog = useCallback(() => {
-      if (!disabled && fileInputRef.current) {
-        fileInputRef.current.click();
-      }
-    }, [disabled]);
-
     return (
       <div
         className={cn("w-full", className)}
@@ -217,9 +274,11 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
         )}
         {label && (
           <label
+            htmlFor={inputId}
             className={cn(
               "block text-sm font-medium text-text-main mb-1.5",
               disabled && "opacity-50",
+              isReadOnly && "opacity-50",
             )}
           >
             {label}
@@ -238,27 +297,31 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
             "border-2 border-dashed border-[color-mix(in_oklch,var(--color-border)_60%,transparent)]",
             "rounded-surface",
             "transition-all duration-200 ease-out",
-            "focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 focus-within:bg-amber-500/5",
             "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
-            hasError &&
-              "border-destructive/50 focus-within:ring-destructive/50 focus-within:border-destructive/50",
+            hasError && "border-destructive/50",
             disabled && "bg-muted/50",
+            isReadOnly && "bg-muted/30",
             isDragOver && "border-amber-500 bg-amber-500/5",
-            isFocused && "ring-2 ring-amber-500/20 border-amber-500",
+            !disabled &&
+              !isReadOnly &&
+              !hasError &&
+              isFocused &&
+              "ring-2 ring-amber-500/20 border-amber-500 bg-amber-500/5",
+            hasError && "ring-destructive/50 border-destructive",
           )}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={openFileDialog}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          tabIndex={disabled ? -1 : 0}
+          tabIndex={-1}
           role="button"
           aria-label={label || "File upload drop zone"}
           aria-disabled={disabled}
+          aria-readonly={isReadOnly}
         >
           <input
             ref={fileInputRef}
+            id={inputId}
             type="file"
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             disabled={disabled}
@@ -266,6 +329,12 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
             accept={acceptTypes.join(",")}
             onChange={handleFileSelect}
             multiple
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            aria-invalid={hasError}
+            aria-describedby={hasError ? errorId : undefined}
+            aria-readonly={isReadOnly}
             {...props}
           />
           <div
@@ -339,7 +408,7 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
                             size="icon"
                             className="active:scale-95 transition-all duration-100"
                             aria-label={action.tooltipText}
-                            disabled={disabled || action.disabled}
+                            disabled={disabled || action.disabled || isReadOnly}
                             onClick={(e) => {
                               e.stopPropagation();
                               action.onClick(fileData.file);
@@ -357,7 +426,7 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
                         size="icon"
                         className="active:scale-95 transition-all duration-100"
                         aria-label="Remove file"
-                        disabled={disabled}
+                        disabled={disabled || isReadOnly}
                         onClick={(e) => {
                           e.stopPropagation();
                           removeFile(fileData.id);
@@ -374,6 +443,7 @@ export const FileUpload = forwardRef<FileUploadRef, FileUploadProps>(
         </div>
         {error && (
           <p
+            id={errorId}
             className={cn(
               "mt-1.5 text-sm",
               "text-destructive/90",

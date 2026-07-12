@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
+  useId,
 } from "react";
 import {
   ChevronDown,
@@ -19,9 +20,9 @@ import {
   CUSTOM_DROPDOWN_CONFIGS,
   DropdownColumnLayout,
 } from "@/components/selector/custom-dropdown-column-config";
-import { Button } from "../general/button";
-import { HintBox } from "../feedback/hint-box";
-import type { PopupMenuConfig } from "../feedback/popup-menu";
+import { Button } from "@/components/general/button";
+import { HintBox } from "@/components/feedback/hint-box";
+import type { PopupMenuConfig } from "@/components/feedback/popup-menu";
 import { THEME_CONFIG } from "@/config/theme-constants";
 
 export interface ComboBoxActionButtonConfig {
@@ -43,7 +44,7 @@ export interface ComboBoxOption {
 
 export interface ComboBoxProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
-  "onChange" | "value" | "defaultValue"
+  "onChange" | "value" | "defaultValue" | "onFocus" | "onBlur" | "onKeyDown"
 > {
   label?: string;
   error?: string;
@@ -74,6 +75,11 @@ export interface ComboBoxProps extends Omit<
   clearable?: boolean;
   maxActionButtons?: number;
   showInlineSearchRow?: boolean;
+  className?: string;
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  id?: string;
 }
 
 export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
@@ -106,19 +112,29 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
       maxActionButtons = 4,
       showInlineSearchRow = false,
       className,
+      onFocus,
+      onBlur,
+      onKeyDown: onKeyDownProp,
+      id,
       ...props
     },
     ref,
   ) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const generatedId = useId();
+    const inputId = id ?? generatedId;
+    const dropdownId = `${inputId}-dropdown`;
+    const errorId = `${inputId}-error`;
     const [isOpen, setIsOpen] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const [selectedRecord, setSelectedRecord] = useState<ComboBoxOption | null>(
       null,
     );
     const hasError = Boolean(error);
+    const isReadOnly = props.readOnly;
 
     const config = useMemo((): DropdownColumnLayout[] => {
       if (configKey) {
@@ -218,6 +234,11 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (disabled || isReadOnly) {
+          onKeyDownProp?.(e);
+          return;
+        }
+
         if (
           !isOpen &&
           (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter")
@@ -225,10 +246,14 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
           e.preventDefault();
           setIsOpen(true);
           setHighlightedIndex(0);
+          onKeyDownProp?.(e);
           return;
         }
 
-        if (!isOpen) return;
+        if (!isOpen) {
+          onKeyDownProp?.(e);
+          return;
+        }
 
         switch (e.key) {
           case "ArrowDown":
@@ -253,12 +278,42 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
             setHighlightedIndex(-1);
             break;
         }
+        onKeyDownProp?.(e);
       },
-      [isOpen, filteredOptions, highlightedIndex, handleSelect],
+      [
+        isOpen,
+        filteredOptions,
+        highlightedIndex,
+        handleSelect,
+        disabled,
+        isReadOnly,
+        onKeyDownProp,
+      ],
+    );
+
+    const handleFocus = useCallback(
+      (e: React.FocusEvent<HTMLInputElement>) => {
+        setIsFocused(true);
+        onFocus?.(e);
+      },
+      [onFocus],
+    );
+
+    const handleBlur = useCallback(
+      (e: React.FocusEvent<HTMLInputElement>) => {
+        setIsFocused(false);
+        onBlur?.(e);
+      },
+      [onBlur],
     );
 
     const limitedInnerIcons = innerIcons.slice(0, 4);
     const limitedActionButtons = actionButtons.slice(0, maxActionButtons);
+
+    const highlightedOptionId =
+      highlightedIndex >= 0 && filteredOptions[highlightedIndex]
+        ? `combobox-option-${generatedId}-${highlightedIndex}`
+        : undefined;
 
     return (
       <div
@@ -272,9 +327,11 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
         )}
         {label && (
           <label
+            htmlFor={inputId}
             className={cn(
               "block text-sm font-medium text-text-main mb-1.5",
               disabled && "opacity-50",
+              isReadOnly && "opacity-50",
             )}
           >
             {label}
@@ -293,12 +350,17 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
               "border-[color-mix(in_oklch,var(--color-border)_60%,transparent)]",
               "rounded-surface",
               "text-text-main placeholder:text-muted-foreground/60",
-              "focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 focus-within:bg-amber-500/5",
               "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
               "transition-all duration-200 ease-out",
-              hasError &&
-                "border-destructive/50 focus-within:ring-destructive/50 focus-within:border-destructive/50",
+              hasError && "border-destructive/50",
               disabled && "bg-muted/50",
+              isReadOnly && "bg-muted/30",
+              !disabled &&
+                !isReadOnly &&
+                !hasError &&
+                isFocused &&
+                "ring-2 ring-amber-500/20 border-amber-500 bg-amber-500/5",
+              hasError && "ring-destructive/50 border-destructive",
             )}
           >
             {(prefixIcon || prefixText) && (
@@ -307,6 +369,7 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                   "flex items-center justify-center px-3",
                   "text-muted-foreground/60",
                   disabled && "opacity-50",
+                  isReadOnly && "opacity-50",
                 )}
                 aria-hidden="true"
               >
@@ -322,6 +385,7 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
             )}
             <input
               ref={handleRef}
+              id={inputId}
               type="text"
               className={cn(
                 "flex-1 bg-transparent border-none outline-none",
@@ -346,10 +410,24 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
               }
               onClick={(e) => {
                 e.stopPropagation();
-                if (!disabled) setIsOpen(!isOpen);
+                if (!disabled && !isReadOnly) setIsOpen(!isOpen);
               }}
               onKeyDown={handleKeyDown}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
               readOnly
+              aria-invalid={hasError}
+              aria-describedby={hasError ? errorId : undefined}
+              aria-readonly={isReadOnly}
+              aria-disabled={disabled}
+              aria-required={required}
+              aria-expanded={isOpen}
+              aria-controls={isOpen ? dropdownId : undefined}
+              aria-owns={isOpen ? dropdownId : undefined}
+              aria-activedescendant={highlightedOptionId}
+              aria-autocomplete="list"
+              aria-haspopup="listbox"
+              role="combobox"
               {...props}
             />
             {suffixIcon && (
@@ -358,6 +436,7 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                   "flex items-center justify-center px-3",
                   "text-muted-foreground/60",
                   disabled && "opacity-50",
+                  isReadOnly && "opacity-50",
                 )}
                 aria-hidden="true"
               >
@@ -370,13 +449,14 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                   "flex items-center justify-center px-3",
                   "text-muted-foreground/60",
                   disabled && "opacity-50",
+                  isReadOnly && "opacity-50",
                 )}
                 aria-hidden="true"
               >
                 <span className="text-sm font-medium">{suffixText}</span>
               </div>
             )}
-            {clearable && selectedRecord && !disabled && (
+            {clearable && selectedRecord && !disabled && !isReadOnly && (
               <Button
                 type="button"
                 variant="ghost"
@@ -393,9 +473,14 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
               variant="ghost"
               size="icon"
               className="active:scale-95 transition-all duration-100 flex-shrink-0"
-              disabled={disabled}
-              onClick={() => setIsOpen(!isOpen)}
+              disabled={disabled || isReadOnly}
+              onClick={() => {
+                if (!disabled && !isReadOnly) setIsOpen(!isOpen);
+              }}
               aria-label={isOpen ? "Close dropdown" : "Open dropdown"}
+              aria-expanded={isOpen}
+              aria-controls={dropdownId}
+              aria-haspopup="listbox"
             >
               {isOpen ? (
                 <ChevronUp className="w-4 h-4" aria-hidden="true" />
@@ -411,12 +496,13 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                   key={index}
                   variant="ghost"
                   size="icon"
-                  disabled={disabled || action.disabled}
+                  disabled={disabled || action.disabled || isReadOnly}
                   onClick={(e) =>
                     action.onClick(e, value ?? null, selectedRecord)
                   }
                   className="active:scale-95 transition-all duration-100"
                   aria-label={action.tooltipText}
+                  aria-disabled={disabled || action.disabled || isReadOnly}
                 >
                   {action.icon}
                 </Button>
@@ -427,6 +513,7 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
           {isOpen && (
             <div
               ref={dropdownRef}
+              id={dropdownId}
               className={cn(
                 "absolute z-50 w-full mt-1.5",
                 "bg-card/95 backdrop-blur-[var(--backdrop-blur)] border border-[color-mix(in_oklch,var(--color-border)_60%,transparent)]",
@@ -440,6 +527,7 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
               style={{ maxHeight: THEME_CONFIG.layout.dropdownMaxHeight }}
               role="listbox"
               aria-label="Options"
+              aria-activedescendant={highlightedOptionId}
             >
               {searchable && showInlineSearchRow && (
                 <div className="p-2 border-b border-[color-mix(in_oklch,var(--color-border)_40%,transparent)]">
@@ -464,6 +552,7 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                       }}
                       onKeyDown={(e) => e.stopPropagation()}
                       autoFocus
+                      aria-label="Search options"
                     />
                   </div>
                 </div>
@@ -500,6 +589,8 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                       option[valueKey] === selectedRecord[valueKey],
                     );
 
+                    const optionId = `combobox-option-${generatedId}-${index}`;
+
                     const renderCell = (
                       col: DropdownColumnLayout,
                       opt: ComboBoxOption,
@@ -532,6 +623,7 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                     return (
                       <Button
                         key={(option[valueKey] as string | number) ?? index}
+                        id={optionId}
                         type="button"
                         role="option"
                         aria-selected={isSelected}
@@ -591,6 +683,7 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
                       "active:scale-95 transition-all duration-100",
                     )}
                     onClick={() => {}}
+                    aria-label={`More actions (${actionButtons.length - maxActionButtons} additional)`}
                   >
                     <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
                     <span className="font-medium tracking-wide">
@@ -604,6 +697,7 @@ export const ComboBox = forwardRef<HTMLInputElement, ComboBoxProps>(
 
           {error && (
             <p
+              id={errorId}
               className={cn(
                 "mt-1.5 text-sm",
                 "text-destructive/90",

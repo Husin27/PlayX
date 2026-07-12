@@ -4,8 +4,9 @@ import React, {
   useCallback,
   useState,
   useEffect,
+  useId,
 } from "react";
-import { LucideIcon, Calendar } from "lucide-react";
+import { LucideIcon, Calendar, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "../general/button";
 import { HintBox } from "../feedback/hint-box";
@@ -31,7 +32,7 @@ export interface DateEditActionButtonConfig {
 
 export interface DateEditProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
-  "onChange"
+  "onChange" | "onFocus" | "onBlur" | "onKeyDown"
 > {
   label?: string;
   error?: string;
@@ -41,23 +42,27 @@ export interface DateEditProps extends Omit<
   innerIcons?: DateEditInnerIconConfig[];
   actionButtons?: DateEditActionButtonConfig[];
   onChange?: (value: string, dbValue: string) => void;
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  id?: string;
+  clearable?: boolean;
 }
 
 const DEFAULT_DB_FORMAT = "YYYY-MM-DD";
 
 const formatDateForDb = (dateString: string, dbFormat: string): string => {
   if (!dateString) return "";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return dateString;
+  // Parse YYYY-MM-DD directly to avoid timezone issues with Date constructor
+  const parts = dateString.split("-");
+  if (parts.length !== 3) return dateString;
+  const year = parts[0];
+  const month = parts[1];
+  const day = parts[2];
+  if (year.length !== 4 || month.length !== 2 || day.length !== 2)
+    return dateString;
 
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return dbFormat
-    .replace("YYYY", String(year))
-    .replace("MM", month)
-    .replace("DD", day);
+  return dbFormat.replace("YYYY", year).replace("MM", month).replace("DD", day);
 };
 
 const parseDateFromDb = (dbValue: string, dbFormat: string): string => {
@@ -93,11 +98,18 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
       defaultValue,
       onChange,
       onBlur,
+      onFocus,
+      onKeyDown,
+      id,
+      clearable = false,
       ...props
     },
     ref,
   ) => {
     const inputRef = useRef<HTMLInputElement>(null);
+    const generatedId = useId();
+    const inputId = id ?? generatedId;
+    const errorId = `${inputId}-error`;
     const hasError = Boolean(error);
     const [displayValue, setDisplayValue] = useState<string>("");
     const [isFocused, setIsFocused] = useState(false);
@@ -128,7 +140,19 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
       if (initialValue) {
         const parsed = parseDateFromDb(initialValue, dbFormat);
         setDisplayValue(parsed);
-        setSelectedDate(new Date(parsed));
+        const parts = parsed.split("-");
+        if (parts.length === 3) {
+          const year = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10);
+          const day = parseInt(parts[2], 10);
+          if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+            setSelectedDate(new Date(year, month - 1, day));
+          } else {
+            setSelectedDate(undefined);
+          }
+        } else {
+          setSelectedDate(undefined);
+        }
       } else {
         setDisplayValue("");
         setSelectedDate(undefined);
@@ -143,14 +167,21 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
       [onBlur],
     );
 
-    const handleFocus = useCallback(() => {
-      setIsFocused(true);
-    }, []);
+    const handleFocus = useCallback(
+      (e: React.FocusEvent<HTMLInputElement>) => {
+        setIsFocused(true);
+        onFocus?.(e);
+      },
+      [onFocus],
+    );
 
     const handleCalendarSelect = useCallback(
       (date: Date | undefined) => {
         if (date) {
-          const formatted = date.toISOString().split("T")[0];
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const day = String(date.getDate()).padStart(2, "0");
+          const formatted = `${year}-${month}-${day}`;
           setDisplayValue(formatted);
           setSelectedDate(date);
           const dbValue = formatDateForDb(formatted, dbFormat);
@@ -166,20 +197,61 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
       [dbFormat, onChange],
     );
 
-    const handleKeyDown = useCallback(
-      (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          setIsOpen(true);
-        } else if (e.key === "Escape") {
-          setIsOpen(false);
-        }
-      },
-      [],
-    );
+    const isReadOnly = props.readOnly;
 
     const limitedInnerIcons = innerIcons.slice(0, 4);
     const limitedActionButtons = actionButtons.slice(0, 4);
+
+    const handleClear = useCallback(
+      (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+        setDisplayValue("");
+        setSelectedDate(undefined);
+        setIsOpen(false);
+        onChange?.("", "");
+        inputRef.current?.focus();
+      },
+      [onChange],
+    );
+
+    const handleKeyDown = useCallback(
+      (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (disabled || isReadOnly) {
+          onKeyDown?.(e);
+          return;
+        }
+
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (isOpen) {
+            handleCalendarSelect(selectedDate);
+          } else {
+            setIsOpen(true);
+          }
+        } else if (e.key === "Escape") {
+          if (isOpen) {
+            e.preventDefault();
+            setIsOpen(false);
+          }
+        } else if (e.key === "ArrowDown" && !isOpen) {
+          e.preventDefault();
+          setIsOpen(true);
+        } else if (e.key === "Tab") {
+          if (isOpen) {
+            setIsOpen(false);
+          }
+        }
+        onKeyDown?.(e);
+      },
+      [
+        isOpen,
+        selectedDate,
+        handleCalendarSelect,
+        disabled,
+        isReadOnly,
+        onKeyDown,
+      ],
+    );
 
     return (
       <div
@@ -193,9 +265,11 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
         )}
         {label && (
           <label
+            htmlFor={inputId}
             className={cn(
               "block text-sm font-medium text-text-main mb-1.5",
               disabled && "opacity-50",
+              isReadOnly && "opacity-50",
             )}
           >
             {label}
@@ -207,7 +281,16 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
           </label>
         )}
         <div className="flex items-center w-full gap-2">
-          <Popover open={isOpen} onOpenChange={setIsOpen}>
+          <Popover
+            open={isOpen}
+            onOpenChange={(open) => {
+              if (open && !disabled && !isReadOnly) {
+                setIsOpen(true);
+              } else if (!open) {
+                setIsOpen(false);
+              }
+            }}
+          >
             <PopoverTrigger asChild>
               <div
                 className={cn(
@@ -216,19 +299,25 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
                   "border-[color-mix(in_oklch,var(--color-border)_60%,transparent)]",
                   "rounded-surface",
                   "text-text-main placeholder:text-muted-foreground/60",
-                  "focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 focus-within:bg-amber-500/5",
                   "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
                   "transition-all duration-200 ease-out",
-                  hasError &&
-                    "border-destructive/50 focus-within:ring-destructive/50 focus-within:border-destructive/50",
+                  hasError && "border-destructive/50",
                   disabled && "bg-muted/50",
-                  isFocused && "ring-2 ring-amber-500/20 border-amber-500",
+                  isReadOnly && "bg-muted/30",
+                  !disabled &&
+                    !isReadOnly &&
+                    !hasError &&
+                    isFocused &&
+                    "ring-2 ring-amber-500/20 border-amber-500 bg-amber-500/5",
+                  hasError && "ring-destructive/50 border-destructive",
                 )}
               >
                 <input
                   ref={handleRef}
+                  {...props}
+                  id={inputId}
                   type="text"
-                  readOnly
+                  readOnly={isReadOnly}
                   className={cn(
                     "flex-1 bg-transparent border-none outline-none",
                     "px-4 py-2.5",
@@ -236,6 +325,7 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
                     "disabled:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed",
                     "w-full min-w-0",
                     limitedInnerIcons.length > 0 ? "pr-12" : "pr-12",
+                    isReadOnly && "cursor-text",
                   )}
                   disabled={disabled}
                   required={required}
@@ -244,7 +334,9 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
                   onBlur={handleBlur}
                   onFocus={handleFocus}
                   onKeyDown={handleKeyDown}
-                  {...props}
+                  aria-invalid={hasError}
+                  aria-describedby={hasError ? errorId : undefined}
+                  aria-readonly={isReadOnly}
                 />
                 <div className="absolute right-3 flex items-center gap-1">
                   <Calendar
@@ -272,6 +364,22 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
                       ))}
                     </>
                   )}
+                  {clearable && displayValue && !disabled && !isReadOnly && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="active:scale-95 transition-all duration-100"
+                      onClick={handleClear}
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      aria-label="Clear date"
+                    >
+                      <X className="w-4 h-4" aria-hidden="true" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </PopoverTrigger>
@@ -291,7 +399,7 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
                   key={index}
                   variant="ghost"
                   size="icon"
-                  disabled={disabled || action.disabled}
+                  disabled={disabled || action.disabled || isReadOnly}
                   onClick={(e) => action.onClick(e, displayValue)}
                   className="active:scale-95 transition-all duration-100"
                   aria-label={action.tooltipText}
@@ -304,6 +412,7 @@ export const DateEdit = forwardRef<HTMLInputElement, DateEditProps>(
         </div>
         {error && (
           <p
+            id={errorId}
             className={cn(
               "mt-1.5 text-sm",
               "text-destructive/90",
